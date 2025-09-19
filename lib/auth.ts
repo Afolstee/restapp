@@ -1,13 +1,17 @@
 import bcrypt from "bcryptjs"
 import { cookies } from "next/headers"
-import { query } from "./db"
 import { randomBytes } from "crypto"
+import { signIn as firebaseSignIn, getCurrentUserProfile } from "./firebase/auth"
 
 export interface User {
-  id: number
+  id: string
   email: string
-  name: string
+  firstName: string
+  lastName: string
+  fullName: string
+  userPassword: string
   role: string
+  isActive?: boolean
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -18,12 +22,12 @@ export async function verifyPassword(password: string, hash: string): Promise<bo
   return bcrypt.compare(password, hash)
 }
 
-export async function createSession(userId: number): Promise<string> {
+export async function createSession(userId: string): Promise<string> {
   const sessionId = randomBytes(32).toString("hex")
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7 days
 
-  await query("INSERT INTO sessions (id, user_id, expires_at) VALUES ($1, $2, $3)", [sessionId, userId, expiresAt])
-
+  // For Firebase, we'll store session in cookies only
+  // Firebase handles authentication state automatically
   const cookieStore = await cookies()
   cookieStore.set("session", sessionId, {
     httpOnly: true,
@@ -36,50 +40,27 @@ export async function createSession(userId: number): Promise<string> {
 }
 
 export async function getUser(): Promise<User | null> {
-  const cookieStore = await cookies()
-  const sessionId = cookieStore.get("session")?.value
-
-  if (!sessionId) return null
-
-  const result = await query(
-    `
-    SELECT u.id, u.email, u.name, u.role 
-    FROM users u 
-    JOIN sessions s ON u.id = s.user_id 
-    WHERE s.id = $1 AND s.expires_at > NOW()
-  `,
-    [sessionId],
-  )
-
-  return result.rows[0] || null
+  // Use Firebase Auth to get current user
+  return await getCurrentUserProfile()
 }
 
 export async function signOut(): Promise<void> {
+  // Clear cookies and Firebase auth
+  const { signOut: firebaseSignOut } = await import('./firebase/auth')
+  await firebaseSignOut()
+  
   const cookieStore = await cookies()
-  const sessionId = cookieStore.get("session")?.value
-
-  if (sessionId) {
-    await query("DELETE FROM sessions WHERE id = $1", [sessionId])
-  }
-
   cookieStore.delete("session")
 }
 
-export async function signIn(email: string, password: string): Promise<User | null> {
-  const result = await query("SELECT id, email, name, role, password_hash FROM users WHERE email = $1", [email])
-
-  const user = result.rows[0]
-  if (!user) return null
-
-  const isValid = await verifyPassword(password, user.password_hash)
-  if (!isValid) return null
-
-  await createSession(user.id)
-
-  return {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    role: user.role,
+export async function signIn(identifier: string, password: string): Promise<User | null> {
+  // Use Firebase authentication
+  const user = await firebaseSignIn(identifier, password)
+  
+  if (user) {
+    // Create session for compatibility
+    await createSession(user.id)
   }
+  
+  return user
 }

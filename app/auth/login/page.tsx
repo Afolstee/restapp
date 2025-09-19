@@ -11,8 +11,8 @@ import { useState } from "react"
 import { ChefHat } from "lucide-react"
 
 export default function LoginPage() {
-  const [username, setUsername] = useState("")
-  const [password, setPassword] = useState("")
+  const [firstName, setFirstName] = useState("")
+  const [userPassword, setUserPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
@@ -23,26 +23,20 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      let email = username
-
-      if (username === "Restwebbapp") {
-        email = "admin@restaurant.com"
-      }
-
-      console.log("[v0] Attempting login with email:", email)
+      console.log("[v0] Attempting login with firstName:", firstName)
 
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ firstName, userPassword }),
       })
 
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || "Invalid username or password")
+        throw new Error(result.error || "Invalid first name or ID")
       }
 
       console.log("[v0] Login successful:", result)
@@ -74,30 +68,30 @@ export default function LoginPage() {
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="username" className="text-sm font-medium text-gray-700">
-                  Username or Email
+                <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">
+                  First Name
                 </Label>
                 <Input
-                  id="username"
+                  id="firstName"
                   type="text"
-                  placeholder="Enter username or email"
+                  placeholder="Enter your first name"
                   required
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
                   className="h-12"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
-                  Password
+                <Label htmlFor="userPassword" className="text-sm font-medium text-gray-700">
+                  ID (Password)
                 </Label>
                 <Input
-                  id="password"
+                  id="userPassword"
                   type="password"
-                  placeholder="Enter your password"
+                  placeholder="Enter your generated ID"
                   required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  value={userPassword}
+                  onChange={(e) => setUserPassword(e.target.value)}
                   className="h-12"
                 />
               </div>
@@ -115,16 +109,13 @@ export default function LoginPage() {
 
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
               <p className="text-sm text-blue-800 font-medium">Demo Credentials:</p>
-              <p className="text-xs text-blue-600">Username: Restwebbapp</p>
-              <p className="text-xs text-blue-600">Password: 0919RW</p>
+              <p className="text-xs text-blue-600">First Name: Restwebbapp</p>
+              <p className="text-xs text-blue-600">ID: 0919RW</p>
             </div>
 
             <div className="mt-6 text-center text-sm space-y-2">
-              <div>
-                Need to create an account?{" "}
-                <Link href="/auth/signup" className="text-orange-500 hover:text-orange-600 font-medium hover:underline">
-                  Sign up here
-                </Link>
+              <div className="text-gray-600">
+                Accounts can only be created by admin users in the admin dashboard.
               </div>
               <div>
                 First time setup?{" "}
