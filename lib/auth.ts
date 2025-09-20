@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs"
 import { cookies } from "next/headers"
 import { randomBytes } from "crypto"
-import { signIn as firebaseSignIn, getCurrentUserProfile } from "./firebase/auth"
+import { createClient } from "./supabase/server"
 
 export interface User {
   id: string
@@ -40,22 +40,58 @@ export async function createSession(userId: string): Promise<string> {
 }
 
 export async function getUser(): Promise<User | null> {
-  // Use Firebase Auth to get current user
-  return await getCurrentUserProfile()
+  const supabase = createClient()
+  const { data: { user }, error } = await supabase.auth.getUser()
+  
+  if (error || !user) {
+    return null
+  }
+
+  // Get user profile from users table
+  const { data: profile, error: profileError } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', user.id)
+    .single()
+
+  if (profileError || !profile) {
+    return null
+  }
+
+  return {
+    id: profile.id,
+    email: profile.email,
+    firstName: profile.first_name,
+    lastName: profile.last_name,
+    fullName: `${profile.first_name} ${profile.last_name}`,
+    userPassword: profile.user_password,
+    role: profile.role,
+    isActive: profile.is_active
+  }
 }
 
 export async function signOut(): Promise<void> {
-  // Clear cookies and Firebase auth
-  const { signOut: firebaseSignOut } = await import('./firebase/auth')
-  await firebaseSignOut()
+  const supabase = createClient()
+  await supabase.auth.signOut()
   
   const cookieStore = await cookies()
   cookieStore.delete("session")
 }
 
 export async function signIn(identifier: string, password: string): Promise<User | null> {
-  // Use Firebase authentication
-  const user = await firebaseSignIn(identifier, password)
+  const supabase = createClient()
+  
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email: identifier,
+    password: password,
+  })
+  
+  if (error || !data.user) {
+    return null
+  }
+  
+  // Get user profile
+  const user = await getUser()
   
   if (user) {
     // Create session for compatibility

@@ -1,52 +1,97 @@
-// Firebase Firestore database functions
-import { 
-  collection, 
-  doc, 
-  getDocs, 
-  getDoc, 
-  addDoc, 
-  updateDoc, 
-  deleteDoc, 
-  query as firestoreQuery, 
-  where, 
-  orderBy 
-} from 'firebase/firestore'
-import { db } from './firebase/config'
+// Supabase database functions
+import { createClient } from './supabase/server'
 
-// Compatibility layer for existing SQL-style queries
-export async function query(text: string, params?: any[]) {
-  // This is a simplified compatibility layer
-  // You'll need to migrate specific queries to Firestore
-  console.warn('SQL query needs to be migrated to Firestore:', text, params)
-  return { rows: [] }
+// SQL query function for Supabase
+export async function query(text: string, params: any[] = []) {
+  const supabase = createClient()
+  const { data, error } = await supabase.rpc('query', { query_text: text, query_params: params })
+  
+  if (error) {
+    console.error('Database query error:', error)
+    throw error
+  }
+  
+  return { rows: data || [] }
 }
 
-// Firestore helper functions
-export async function getCollection(collectionName: string) {
-  const querySnapshot = await getDocs(collection(db, collectionName))
-  return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }))
+// Supabase helper functions
+export async function getTable(tableName: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from(tableName)
+    .select('*')
+    
+  if (error) {
+    console.error('Error fetching table:', error)
+    throw error
+  }
+  
+  return data || []
 }
 
-export async function getDocument(collectionName: string, docId: string) {
-  const docRef = doc(db, collectionName, docId)
-  const docSnap = await getDoc(docRef)
-  return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } : null
+export async function getRecord(tableName: string, id: string) {
+  const supabase = createClient()
+  const { data, error } = await supabase
+    .from(tableName)
+    .select('*')
+    .eq('id', id)
+    .single()
+    
+  if (error) {
+    console.error('Error fetching record:', error)
+    return null
+  }
+  
+  return data
 }
 
-export async function addDocument(collectionName: string, data: any) {
-  const docRef = await addDoc(collection(db, collectionName), data)
-  return docRef.id
+export async function insertRecord(tableName: string, data: any) {
+  const supabase = createClient()
+  const { data: result, error } = await supabase
+    .from(tableName)
+    .insert(data)
+    .select()
+    .single()
+    
+  if (error) {
+    console.error('Error inserting record:', error)
+    throw error
+  }
+  
+  return result
 }
 
-export async function updateDocument(collectionName: string, docId: string, data: any) {
-  const docRef = doc(db, collectionName, docId)
-  await updateDoc(docRef, data)
+export async function updateRecord(tableName: string, id: string, data: any) {
+  const supabase = createClient()
+  const { data: result, error } = await supabase
+    .from(tableName)
+    .update(data)
+    .eq('id', id)
+    .select()
+    .single()
+    
+  if (error) {
+    console.error('Error updating record:', error)
+    throw error
+  }
+  
+  return result
 }
 
-export async function deleteDocument(collectionName: string, docId: string) {
-  const docRef = doc(db, collectionName, docId)
-  await deleteDoc(docRef)
+export async function deleteRecord(tableName: string, id: string) {
+  const supabase = createClient()
+  const { error } = await supabase
+    .from(tableName)
+    .delete()
+    .eq('id', id)
+    
+  if (error) {
+    console.error('Error deleting record:', error)
+    throw error
+  }
+  
+  return true
 }
 
-export { db as firestore }
-export default db
+export { createClient as supabase }
+export default createClient

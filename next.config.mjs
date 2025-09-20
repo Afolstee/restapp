@@ -9,6 +9,19 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  async headers() {
+    return [
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN',
+          },
+        ],
+      },
+    ]
+  },
 }
 
 export default nextConfig
