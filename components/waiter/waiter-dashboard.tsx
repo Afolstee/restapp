@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -8,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { MenuGrid } from "./menu-grid"
 import { OrderSidebar } from "./order-sidebar"
 import { ActiveOrders } from "./active-orders"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { Clock, User, LogOut, Search, Plus, Utensils } from "lucide-react"
 
 interface MenuItem {
@@ -47,6 +49,7 @@ export function WaiterDashboard() {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
   const [user, setUser] = useState<any>(null)
+  const router = useRouter()
 
   const supabase = createClient()
 
@@ -137,7 +140,13 @@ export function WaiterDashboard() {
   }
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
+    try {
+      await supabase.auth.signOut()
+      router.replace('/auth/login')
+    } catch (error) {
+      console.error('Error signing out:', error)
+      router.replace('/auth/login')
+    }
   }
 
   const categories = ["all", ...new Set(menuItems.map((item) => item.category))]
@@ -174,6 +183,7 @@ export function WaiterDashboard() {
                 {user?.profile?.first_name} {user?.profile?.last_name}
               </span>
             </div>
+            <ThemeToggle />
             <Button
               variant="ghost"
               size="sm"

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -11,6 +12,7 @@ import { MenuManagement } from "./menu-management"
 import { OrdersOverview } from "./orders-overview"
 import { SalesAnalytics } from "./sales-analytics"
 import { AccountCreation } from "./account-creation"
+import { ThemeToggle } from "@/components/theme-toggle"
 import {
   Users,
   Utensils,
@@ -43,6 +45,7 @@ export function AdminDashboard() {
     todayRevenue: 0,
   })
   const [user, setUser] = useState<any>(null)
+  const router = useRouter()
 
   const supabase = createClient()
 
@@ -96,7 +99,13 @@ export function AdminDashboard() {
   }
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
+    try {
+      await supabase.auth.signOut()
+      router.replace('/auth/login')
+    } catch (error) {
+      console.error('Error signing out:', error)
+      router.replace('/auth/login')
+    }
   }
 
   return (
@@ -120,6 +129,7 @@ export function AdminDashboard() {
                 Welcome, {user?.profile?.first_name} {user?.profile?.last_name}
               </span>
             </div>
+            <ThemeToggle />
             <Button
               variant="ghost"
               size="sm"
