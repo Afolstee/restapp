@@ -3,16 +3,16 @@ import { signIn } from "@/lib/auth"
 
 export async function POST(request: NextRequest) {
   try {
-    const { staff_id, password } = await request.json()
+    const { firstName, password } = await request.json()
 
-    if (!staff_id || !password) {
-      return NextResponse.json({ error: "Staff ID and password are required" }, { status: 400 })
+    if (!firstName || !password) {
+      return NextResponse.json({ error: "First name and password are required" }, { status: 400 })
     }
 
-    const user = await signIn(staff_id, password)
+    const user = await signIn(firstName, password)
 
     if (!user) {
-      return NextResponse.json({ error: "Invalid staff ID or password" }, { status: 401 })
+      return NextResponse.json({ error: "Invalid first name or password" }, { status: 401 })
     }
 
     return NextResponse.json({ user })

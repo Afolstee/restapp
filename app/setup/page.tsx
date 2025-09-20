@@ -29,7 +29,7 @@ export default function SetupPage() {
           password: "0919RW",
           first_name: "Admin",
           last_name: "User",
-          staff_id: "2009ADMIN"
+          staff_id: "2009AU"
         }),
       })
 
