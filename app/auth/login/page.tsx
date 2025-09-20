@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -115,17 +114,6 @@ export default function LoginPage() {
               <p className="text-xs text-blue-600">ID format: Day+Month+FirstInitial+LastInitial</p>
             </div>
 
-            <div className="mt-6 text-center text-sm space-y-2">
-              <div className="text-gray-600">
-                Accounts can only be created by admin users in the admin dashboard.
-              </div>
-              <div>
-                First time setup?{" "}
-                <Link href="/setup" className="text-blue-500 hover:text-blue-600 font-medium hover:underline">
-                  Create admin user
-                </Link>
-              </div>
-            </div>
           </CardContent>
         </Card>
       </div>
