@@ -8,6 +8,7 @@ export default async function HomePage() {
     if (user.role === "admin") {
       redirect("/admin")
     } else {
+      // Handle both waiter and waitstaff roles
       redirect("/waiter")
     }
   }

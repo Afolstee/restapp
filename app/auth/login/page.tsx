@@ -44,6 +44,7 @@ export default function LoginPage() {
       if (result.user.role === "admin") {
         router.push("/admin")
       } else {
+        // Handle both waiter and waitstaff roles
         router.push("/waiter")
       }
     } catch (error: unknown) {

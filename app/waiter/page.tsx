@@ -3,7 +3,7 @@ import { WaiterDashboard } from "@/components/waiter/waiter-dashboard"
 
 export default function WaiterPage() {
   return (
-    <AuthGuard requiredRole="waiter">
+    <AuthGuard requiredRole="waitstaff">
       <WaiterDashboard />
     </AuthGuard>
   )

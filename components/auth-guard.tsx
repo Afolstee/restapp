@@ -2,14 +2,13 @@
 
 import type React from "react"
 
-import { createClient } from "@/lib/supabase/client"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 import { Loader2 } from "lucide-react"
 
 interface AuthGuardProps {
   children: React.ReactNode
-  requiredRole?: "admin" | "waiter"
+  requiredRole?: "admin" | "waitstaff"
 }
 
 export function AuthGuard({ children, requiredRole }: AuthGuardProps) {
@@ -19,12 +18,19 @@ export function AuthGuard({ children, requiredRole }: AuthGuardProps) {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const supabase = createClient()
-
       try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
+        // Use our custom authentication API
+        const response = await fetch("/api/auth/me", {
+          method: "GET",
+          credentials: "include"
+        })
+
+        if (!response.ok) {
+          router.push("/auth/login")
+          return
+        }
+
+        const { user } = await response.json()
 
         if (!user) {
           router.push("/auth/login")
@@ -32,20 +38,17 @@ export function AuthGuard({ children, requiredRole }: AuthGuardProps) {
         }
 
         if (requiredRole) {
-          const { data: userProfile } = await supabase
-            .from("users")
-            .select("role, is_active")
-            .eq("id", user.id)
-            .single()
-
-          if (!userProfile?.is_active) {
+          if (user.status !== 'active') {
             router.push("/auth/login")
             return
           }
 
-          if (userProfile?.role !== requiredRole) {
+          // Convert waiter to waitstaff for consistency
+          const userRole = user.role === 'waiter' ? 'waitstaff' : user.role
+
+          if (userRole !== requiredRole) {
             // Redirect to appropriate dashboard based on actual role
-            if (userProfile?.role === "admin") {
+            if (userRole === "admin") {
               router.push("/admin")
             } else {
               router.push("/waiter")

@@ -100,7 +100,7 @@ export async function getUser(): Promise<User | null> {
       lastName: staff.last_name,
       fullName: `${staff.first_name} ${staff.last_name}`,
       status: staff.status,
-      role: staff.role || 'waiter'
+      role: staff.role || 'waitstaff'
     }
   } catch (error) {
     console.error("Session validation error:", error)
@@ -128,7 +128,7 @@ export async function signOut(): Promise<void> {
 export async function signIn(firstName: string, password: string): Promise<User | null> {
   const supabase = createClient()
   
-  // Find staff member by first name (case insensitive)
+  // Find all staff members with matching first name (case insensitive)
   const { data: staffList, error: staffError } = await supabase
     .from('staff')
     .select('*')
@@ -139,49 +139,56 @@ export async function signIn(firstName: string, password: string): Promise<User 
     return null
   }
   
-  // If multiple matches, we need exact case match
-  let staff = staffList.find(s => s.first_name.toLowerCase() === firstName.toLowerCase())
-  if (!staff) staff = staffList[0] // fallback to first match
-  
-  // Verify password against hashed password
-  if (!staff.password_hash) {
-    return null
-  }
-  
-  // Check if password is still plaintext (migration case)
-  let passwordValid = false
-  if (staff.password_hash === staff.staff_id) {
-    // Still plaintext - verify directly and hash it
-    passwordValid = password === staff.staff_id
-    if (passwordValid) {
-      const hashedPassword = await hashPassword(password)
-      await supabase
-        .from('staff')
-        .update({ password_hash: hashedPassword })
-        .eq('staff_id', staff.staff_id)
+  // Try password verification against all matching staff members
+  for (const staff of staffList) {
+    let passwordValid = false
+    
+    // Handle missing password_hash (NULL) - treat as needing migration
+    if (!staff.password_hash) {
+      // No password set yet - check if password equals staff_id and set it
+      if (password === staff.staff_id) {
+        passwordValid = true
+        const hashedPassword = await hashPassword(password)
+        await supabase
+          .from('staff')
+          .update({ password_hash: hashedPassword })
+          .eq('staff_id', staff.staff_id)
+      }
+    } else if (staff.password_hash === staff.staff_id) {
+      // Still plaintext - verify directly and hash it
+      passwordValid = password === staff.staff_id
+      if (passwordValid) {
+        const hashedPassword = await hashPassword(password)
+        await supabase
+          .from('staff')
+          .update({ password_hash: hashedPassword })
+          .eq('staff_id', staff.staff_id)
+      }
+    } else {
+      // Already hashed - use bcrypt verification
+      passwordValid = await verifyPassword(password, staff.password_hash)
     }
-  } else {
-    // Already hashed - use bcrypt verification
-    passwordValid = await verifyPassword(password, staff.password_hash)
+    
+    // If password is valid for this staff member, return the user
+    if (passwordValid) {
+      const user = {
+        id: staff.staff_id,
+        staff_id: staff.staff_id,
+        email: staff.email || '',
+        firstName: staff.first_name,
+        lastName: staff.last_name,
+        fullName: `${staff.first_name} ${staff.last_name}`,
+        status: staff.status,
+        role: staff.role || 'waitstaff'
+      }
+      
+      // Create secure session
+      await createSession(user.id)
+      
+      return user
+    }
   }
   
-  if (!passwordValid) {
-    return null
-  }
-  
-  const user = {
-    id: staff.staff_id,
-    staff_id: staff.staff_id,
-    email: staff.email || '',
-    firstName: staff.first_name,
-    lastName: staff.last_name,
-    fullName: `${staff.first_name} ${staff.last_name}`,
-    status: staff.status,
-    role: staff.role || 'waiter'
-  }
-  
-  // Create secure session
-  await createSession(user.id)
-  
-  return user
+  // No valid password found for any staff member with this first name
+  return null
 }
