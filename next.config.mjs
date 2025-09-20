@@ -26,6 +26,14 @@ const nextConfig = {
       },
     ]
   },
+  // Configure for Replit environment
+  experimental: {
+    serverComponentsExternalPackages: [],
+  },
+  // Allow all hosts for Replit proxy
+  env: {
+    HOSTNAME: '0.0.0.0'
+  }
 }
 
 export default nextConfig
