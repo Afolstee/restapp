@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Plus, UserX } from "lucide-react"
-import { supabase } from "@/lib/supabase"
+import { createClient } from "@/lib/supabase/client"
 
 interface Staff {
   staff_id: string
@@ -43,7 +43,7 @@ export default function StaffManagement() {
 
   const fetchStaff = async () => {
     try {
-      const { data, error } = await supabase.from("staff").select("*").order("created_at", { ascending: false })
+      const { data, error } = await createClient().from("staff").select("*").order("created_at", { ascending: false })
 
       if (error) {
         console.error("Error fetching staff:", error)
@@ -65,9 +65,9 @@ export default function StaffManagement() {
 
   try {
     // Get the current user
-    const { data: { user } } = await supabase.auth.getUser()
+    const { data: { user } } = await createClient().auth.getUser()
 
-    const { data, error } = await supabase
+    const { data, error } = await createClient()
       .from("staff")
       .insert([
         {
@@ -97,7 +97,7 @@ export default function StaffManagement() {
   const handleToggleActive = async (staffId: string, currentStatus: string) => {
     try {
       const newStatus = currentStatus === "active" ? "inactive" : "active"
-      const { error } = await supabase.from("staff").update({ status: newStatus }).eq("staff_id", staffId)
+      const { error } = await createClient().from("staff").update({ status: newStatus }).eq("staff_id", staffId)
 
       if (error) {
         console.error("Error updating staff:", error)
