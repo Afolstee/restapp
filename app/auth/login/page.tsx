@@ -11,7 +11,7 @@ import { useState } from "react"
 import { ChefHat } from "lucide-react"
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("")
+  const [staff_id, setStaffId] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
@@ -23,20 +23,20 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      console.log("[v0] Attempting login with email:", email)
+      console.log("[v0] Attempting login with staff_id:", staff_id)
 
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ staff_id, password }),
       })
 
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || "Invalid first name or ID")
+        throw new Error(result.error || "Invalid staff ID or password")
       }
 
       console.log("[v0] Login successful:", result)
@@ -68,16 +68,16 @@ export default function LoginPage() {
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                  Email
+                <Label htmlFor="staff_id" className="text-sm font-medium text-gray-700">
+                  Staff ID
                 </Label>
                 <Input
-                  id="email"
-                  type="email"
-                  placeholder="Enter your email"
+                  id="staff_id"
+                  type="text"
+                  placeholder="Enter your staff ID"
                   required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  value={staff_id}
+                  onChange={(e) => setStaffId(e.target.value)}
                   className="h-12"
                 />
               </div>
@@ -109,8 +109,9 @@ export default function LoginPage() {
 
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
               <p className="text-sm text-blue-800 font-medium">Demo Credentials:</p>
-              <p className="text-xs text-blue-600">Email: admin@restaurant.com</p>
-              <p className="text-xs text-blue-600">Password: 0919RW</p>
+              <p className="text-xs text-blue-600">Staff ID: 2009JD (John Doe)</p>
+              <p className="text-xs text-blue-600">Staff ID: 2009MS (Mary Smith)</p>
+              <p className="text-xs text-blue-600">Password: Set via setup page</p>
             </div>
 
             <div className="mt-6 text-center text-sm space-y-2">

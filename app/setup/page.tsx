@@ -17,7 +17,7 @@ export default function SetupPage() {
     setError(null)
 
     try {
-      console.log("[v0] Creating admin user...")
+      console.log("[v0] Creating admin staff...")
 
       const response = await fetch("/api/auth/setup", {
         method: "POST",
@@ -27,18 +27,19 @@ export default function SetupPage() {
         body: JSON.stringify({
           email: "admin@restaurant.com",
           password: "0919RW",
-          name: "Admin Restaurant",
-          role: "admin"
+          first_name: "Admin",
+          last_name: "User",
+          staff_id: "2009ADMIN"
         }),
       })
 
       const result = await response.json()
 
       if (!response.ok) {
-        throw new Error(result.error || "Failed to create admin user")
+        throw new Error(result.error || "Failed to create admin staff")
       }
 
-      console.log("[v0] Admin user created successfully:", result)
+      console.log("[v0] Admin staff created successfully:", result)
 
       setIsComplete(true)
 
@@ -47,7 +48,7 @@ export default function SetupPage() {
       }, 3000)
     } catch (error: any) {
       console.log("[v0] Setup error:", error)
-      setError(error.message || "Failed to create admin user")
+      setError(error.message || "Failed to create admin staff")
     } finally {
       setIsLoading(false)
     }
@@ -63,7 +64,7 @@ export default function SetupPage() {
             </div>
             <CardTitle className="text-3xl font-bold text-gray-900">Setup Complete!</CardTitle>
             <CardDescription className="text-gray-600">
-              Admin user created! Check your email to confirm, then you can log in.
+              Admin staff created! You can now log in with your Staff ID.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -79,23 +80,23 @@ export default function SetupPage() {
             <ChefHat className="w-8 h-8 text-white" />
           </div>
           <CardTitle className="text-3xl font-bold text-gray-900">Restaurant POS Setup</CardTitle>
-          <CardDescription className="text-gray-600">Create the initial admin user to get started</CardDescription>
+          <CardDescription className="text-gray-600">Create the initial admin staff member to get started</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
-            <h3 className="font-medium text-blue-900 mb-2">Admin User Details:</h3>
+            <h3 className="font-medium text-blue-900 mb-2">Admin Staff Details:</h3>
             <div className="text-sm text-blue-800 space-y-1">
               <p>
                 <strong>Email:</strong> admin@restaurant.com
               </p>
               <p>
-                <strong>Username:</strong> Restwebbapp
+                <strong>Staff ID:</strong> 2009ADMIN
               </p>
               <p>
                 <strong>Password:</strong> 0919RW
               </p>
               <p>
-                <strong>Role:</strong> Admin
+                <strong>Name:</strong> Admin User
               </p>
             </div>
           </div>
@@ -107,10 +108,10 @@ export default function SetupPage() {
             disabled={isLoading}
             className="w-full h-12 bg-orange-500 hover:bg-orange-600 text-white font-medium"
           >
-            {isLoading ? "Creating Admin User..." : "Create Admin User"}
+            {isLoading ? "Creating Admin Staff..." : "Create Admin Staff"}
           </Button>
 
-          <p className="text-xs text-gray-500 text-center">This will create the admin user in the database.</p>
+          <p className="text-xs text-gray-500 text-center">This will create the admin staff member in the database.</p>
         </CardContent>
       </Card>
     </div>

@@ -5,13 +5,13 @@ import { createClient } from "./supabase/server"
 
 export interface User {
   id: string
+  staff_id: string
   email: string
   firstName: string
   lastName: string
   fullName: string
-  userPassword: string
+  status: string
   role: string
-  isActive?: boolean
 }
 
 export async function hashPassword(password: string): Promise<string> {
@@ -47,27 +47,26 @@ export async function getUser(): Promise<User | null> {
     return null
   }
 
-  // Get user profile from users table (matching existing schema)
-  const { data: profile, error: profileError } = await supabase
-    .from('users')
+  // Get staff profile from staff table
+  const { data: staff, error: staffError } = await supabase
+    .from('staff')
     .select('*')
     .eq('email', user.email)
     .single()
 
-  if (profileError || !profile) {
+  if (staffError || !staff || staff.status !== 'active') {
     return null
   }
 
-  const nameParts = profile.name.split(' ')
   return {
-    id: profile.id.toString(),
-    email: profile.email,
-    firstName: nameParts[0] || 'User',
-    lastName: nameParts[1] || '',
-    fullName: profile.name,
-    userPassword: '', // Not used in Supabase auth
-    role: profile.role,
-    isActive: true
+    id: user.id,
+    staff_id: staff.staff_id,
+    email: staff.email,
+    firstName: staff.first_name,
+    lastName: staff.last_name,
+    fullName: `${staff.first_name} ${staff.last_name}`,
+    status: staff.status,
+    role: staff.staff_id.toLowerCase().includes('admin') ? 'admin' : 'waiter'
   }
 }
 
@@ -79,11 +78,29 @@ export async function signOut(): Promise<void> {
   cookieStore.delete("session")
 }
 
-export async function signIn(identifier: string, password: string): Promise<User | null> {
+export async function signIn(staff_id: string, password: string): Promise<User | null> {
   const supabase = createClient()
   
+  // Find staff member by staff_id
+  const { data: staff, error: staffError } = await supabase
+    .from('staff')
+    .select('*')
+    .eq('staff_id', staff_id)
+    .single()
+    
+  if (staffError || !staff || staff.status !== 'active') {
+    return null
+  }
+  
+  // All staff must have email for authentication
+  if (!staff.email) {
+    console.error('Staff member has no email for authentication')
+    return null
+  }
+  
+  // Sign in with Supabase Auth
   const { data, error } = await supabase.auth.signInWithPassword({
-    email: identifier,
+    email: staff.email,
     password: password,
   })
   
@@ -91,12 +108,15 @@ export async function signIn(identifier: string, password: string): Promise<User
     return null
   }
   
-  // Get user profile
-  const user = await getUser()
-  
-  if (user) {
-    // Create session for compatibility
-    await createSession(user.id)
+  const user = {
+    id: data.user.id,
+    staff_id: staff.staff_id,
+    email: staff.email,
+    firstName: staff.first_name,
+    lastName: staff.last_name,
+    fullName: `${staff.first_name} ${staff.last_name}`,
+    status: staff.status,
+    role: staff.staff_id.toLowerCase().includes('admin') ? 'admin' : 'waiter'
   }
   
   return user
