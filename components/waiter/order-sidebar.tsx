@@ -230,7 +230,7 @@ export function OrderSidebar({
                         <Plus className="w-3 h-3" />
                       </Button>
                     </div>
-                    <Badge variant="secondary">${item.total_price.toFixed(2)}</Badge>
+                    <Badge variant="secondary">₦{item.total_price.toFixed(2)}</Badge>
                   </div>
                 </CardContent>
               </Card>
@@ -262,16 +262,16 @@ export function OrderSidebar({
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span>Subtotal:</span>
-            <span>${orderTotal.toFixed(2)}</span>
+            <span>₦{orderTotal.toFixed(2)}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span>Tax (8.75%):</span>
-            <span>${taxAmount.toFixed(2)}</span>
+            <span>₦{taxAmount.toFixed(2)}</span>
           </div>
           <Separator />
           <div className="flex justify-between font-semibold">
             <span>Total:</span>
-            <span>${finalTotal.toFixed(2)}</span>
+            <span>₦{finalTotal.toFixed(2)}</span>
           </div>
         </div>
 

@@ -127,7 +127,7 @@ export function AdminDashboard() {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <Utensils className="w-8 h-8 text-primary" />
-              <h1 className="text-2xl font-bold">Restaurant POS</h1>
+              <h1 className="text-2xl font-bold">Restaurant</h1>
             </div>
             <Badge variant="secondary" className="bg-primary/20 text-primary">
               Admin Dashboard
@@ -218,8 +218,8 @@ export function AdminDashboard() {
                   <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-primary">${stats.todayRevenue.toFixed(2)}</div>
-                  <p className="text-xs text-muted-foreground">Total: ${stats.totalRevenue.toFixed(2)}</p>
+                  <div className="text-2xl font-bold text-primary">₦{stats.todayRevenue.toFixed(2)}</div>
+                  <p className="text-xs text-muted-foreground">Total: ₦{stats.totalRevenue.toFixed(2)}</p>
                 </CardContent>
               </Card>
 

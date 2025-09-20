@@ -17,7 +17,7 @@ export default function SetupPage() {
     setError(null)
 
     try {
-      console.log("[v0] Creating admin staff...")
+      console.log("Creating admin staff...")
 
       const response = await fetch("/api/auth/setup", {
         method: "POST",
@@ -39,7 +39,7 @@ export default function SetupPage() {
         throw new Error(result.error || "Failed to create admin staff")
       }
 
-      console.log("[v0] Admin staff created successfully:", result)
+      console.log("Admin staff created successfully:", result)
 
       setIsComplete(true)
 
@@ -47,7 +47,7 @@ export default function SetupPage() {
         router.push("/auth/login")
       }, 3000)
     } catch (error: any) {
-      console.log("[v0] Setup error:", error)
+      console.log("Setup error:", error)
       setError(error.message || "Failed to create admin staff")
     } finally {
       setIsLoading(false)

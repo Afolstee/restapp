@@ -18,6 +18,24 @@ interface CategoryData {
   category: string
   revenue: number
   orders: number
+  [key: string]: string | number // Index signature for recharts compatibility
+}
+
+interface OrderItem {
+  quantity: number
+  total_price: number
+  menu_item: {
+    name: string
+    category: string
+  }
+}
+
+interface Order {
+  id: string
+  created_at: string
+  total_amount: number
+  status: string
+  order_items: OrderItem[]
 }
 
 interface Analytics {
@@ -76,9 +94,11 @@ export function SalesAnalytics() {
 
       if (error) throw error
 
+      const typedOrders = orders as Order[] | null
+
       // Calculate analytics
-      const totalRevenue = orders?.reduce((sum, order) => sum + order.total_amount, 0) || 0
-      const totalOrders = orders?.length || 0
+      const totalRevenue = typedOrders?.reduce((sum, order) => sum + order.total_amount, 0) || 0
+      const totalOrders = typedOrders?.length || 0
       const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0
 
       // Sales by day
@@ -88,7 +108,7 @@ export function SalesAnalytics() {
         date.setDate(date.getDate() - i)
         const dateStr = date.toISOString().split("T")[0]
 
-        const dayOrders = orders?.filter((order) => order.created_at.startsWith(dateStr)) || []
+        const dayOrders = typedOrders?.filter((order) => order.created_at.startsWith(dateStr)) || []
 
         salesByDay.push({
           date: date.toLocaleDateString("en-US", { month: "short", day: "numeric" }),
@@ -99,8 +119,8 @@ export function SalesAnalytics() {
 
       // Sales by category
       const categoryMap = new Map<string, { revenue: number; orders: number }>()
-      orders?.forEach((order) => {
-        order.order_items.forEach((item) => {
+      typedOrders?.forEach((order: Order) => {
+        order.order_items.forEach((item: OrderItem) => {
           const category = item.menu_item.category
           const existing = categoryMap.get(category) || { revenue: 0, orders: 0 }
           categoryMap.set(category, {
@@ -118,8 +138,8 @@ export function SalesAnalytics() {
 
       // Top selling items
       const itemMap = new Map<string, { quantity: number; revenue: number }>()
-      orders?.forEach((order) => {
-        order.order_items.forEach((item) => {
+      typedOrders?.forEach((order: Order) => {
+        order.order_items.forEach((item: OrderItem) => {
           const name = item.menu_item.name
           const existing = itemMap.get(name) || { quantity: 0, revenue: 0 }
           itemMap.set(name, {
@@ -186,7 +206,7 @@ export function SalesAnalytics() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">${analytics.totalRevenue.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-primary">₦{analytics.totalRevenue.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
               {timeRange === "7days" ? "Last 7 days" : timeRange === "30days" ? "Last 30 days" : "Last 90 days"}
             </p>
@@ -210,7 +230,7 @@ export function SalesAnalytics() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">${analytics.averageOrderValue.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-primary">₦{analytics.averageOrderValue.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">Per order average</p>
           </CardContent>
         </Card>
@@ -266,7 +286,7 @@ export function SalesAnalytics() {
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ category, percent }) => `${category} ${(percent * 100).toFixed(0)}%`}
+                  label={({ category, percent }) => `${category} ${((percent as number) * 100).toFixed(0)}%`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="revenue"
@@ -305,7 +325,7 @@ export function SalesAnalytics() {
                 </div>
                 <div className="flex items-center gap-4 text-sm">
                   <span className="text-muted-foreground">{item.quantity} sold</span>
-                  <span className="font-medium">${item.revenue.toFixed(2)}</span>
+                  <span className="font-medium">₦{item.revenue.toFixed(2)}</span>
                 </div>
               </div>
             ))}

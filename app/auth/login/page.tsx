@@ -22,7 +22,7 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      console.log("[v0] Attempting login with firstName:", firstName)
+      console.log("Attempting login with firstName:", firstName)
 
       const response = await fetch("/api/auth/login", {
         method: "POST",
@@ -38,7 +38,7 @@ export default function LoginPage() {
         throw new Error(result.error || "Invalid first name or password")
       }
 
-      console.log("[v0] Login successful:", result)
+      console.log("Login successful:", result)
 
       if (result.user.role === "admin") {
         router.push("/admin")
@@ -47,7 +47,7 @@ export default function LoginPage() {
         router.push("/waiter")
       }
     } catch (error: unknown) {
-      console.log("[v0] Login error:", error)
+      console.log("Login error:", error)
       setError(error instanceof Error ? error.message : "An error occurred")
     } finally {
       setIsLoading(false)
@@ -62,7 +62,6 @@ export default function LoginPage() {
             <div className="mx-auto mb-4 w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center">
               <ChefHat className="w-8 h-8 text-white" />
             </div>
-            <CardTitle className="text-3xl font-bold text-gray-900">Restaurant POS</CardTitle>
             <CardDescription className="text-gray-600">Sign in to access your dashboard</CardDescription>
           </CardHeader>
           <CardContent>
@@ -108,10 +107,11 @@ export default function LoginPage() {
             </form>
 
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-              <p className="text-sm text-blue-800 font-medium">Login Instructions:</p>
-              <p className="text-xs text-blue-600">Username: Your first name</p>
-              <p className="text-xs text-blue-600">Password: Your generated ID (e.g., 2009JD)</p>
-              <p className="text-xs text-blue-600">ID format: Day+Month+FirstInitial+LastInitial</p>
+              <p className="text-sm text-blue-800 font-medium">Login Demo Instructions:</p>
+              <p className="text-xs text-blue-600">Username: Admin</p>
+              <p className="text-xs text-blue-600">Password: 2009AU</p>
+              <p className="text-xs text-blue-600">Username: John</p>
+              <p className="text-xs text-blue-600">Password: 2009JD</p>
             </div>
 
           </CardContent>
