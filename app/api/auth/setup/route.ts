@@ -1,31 +1,71 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { hashPassword } from "@/lib/auth"
-import { query } from "@/lib/db"
+import { createClient } from "@/lib/supabase/server"
 
 export async function POST(request: NextRequest) {
   try {
+    console.log("[Setup API] Starting admin user creation...")
+
     const { email, password, name, role } = await request.json()
+    console.log("[Setup API] Received data:", { email, name, role })
 
     if (!email || !password || !name || !role) {
+      console.log("[Setup API] Missing required fields")
       return NextResponse.json({ error: "All fields are required" }, { status: 400 })
     }
 
-    // Check if user already exists
-    const existingUser = await query("SELECT id FROM users WHERE email = $1", [email])
+    const supabase = createClient()
 
-    if (existingUser.rows.length > 0) {
+    // Check if user already exists
+    console.log("[Setup API] Checking if user exists...")
+    const { data: existingUser, error: checkError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email)
+      .maybeSingle()
+
+    if (checkError) {
+      console.error("[Setup API] Error checking existing user:", checkError)
+      return NextResponse.json({ error: "Database error" }, { status: 500 })
+    }
+
+    if (existingUser) {
+      console.log("[Setup API] User already exists")
       return NextResponse.json({ error: "User already exists" }, { status: 409 })
     }
 
-    // Hash password and create user
+    // Create auth user first
+    console.log("[Setup API] Creating Supabase auth user...")
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email,
+      password,
+    })
+
+    if (authError) {
+      console.error("[Setup API] Error creating auth user:", authError)
+      return NextResponse.json({ error: "Failed to create auth user" }, { status: 500 })
+    }
+
+    // Create user profile (matching existing schema)
+    console.log("[Setup API] Creating user profile...")
     const passwordHash = await hashPassword(password)
+    const { data: user, error: insertError } = await supabase
+      .from('users')
+      .insert({
+        email,
+        password_hash: passwordHash,
+        name,
+        role
+      })
+      .select('id, email, name, role')
+      .single()
 
-    const result = await query(
-      "INSERT INTO users (email, password_hash, name, role) VALUES ($1, $2, $3, $4) RETURNING id, email, name, role",
-      [email, passwordHash, name, role],
-    )
+    if (insertError) {
+      console.error("[Setup API] Error creating user:", insertError)
+      return NextResponse.json({ error: "Failed to create user" }, { status: 500 })
+    }
 
-    const user = result.rows[0]
+    console.log("[Setup API] User created successfully:", user)
 
     return NextResponse.json({
       message: "Admin user created successfully",
@@ -37,7 +77,11 @@ export async function POST(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error("Setup error:", error)
+    console.error("[Setup API] Detailed error:", {
+      message: error.message,
+      stack: error.stack,
+      name: error.name,
+    })
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

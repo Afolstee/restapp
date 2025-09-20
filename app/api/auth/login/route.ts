@@ -3,16 +3,16 @@ import { signIn } from "@/lib/auth"
 
 export async function POST(request: NextRequest) {
   try {
-    const { firstName, userPassword } = await request.json()
+    const { email, password } = await request.json()
 
-    if (!firstName || !userPassword) {
-      return NextResponse.json({ error: "First name and ID are required" }, { status: 400 })
+    if (!email || !password) {
+      return NextResponse.json({ error: "Email and password are required" }, { status: 400 })
     }
 
-    const user = await signIn(firstName, userPassword)
+    const user = await signIn(email, password)
 
     if (!user) {
-      return NextResponse.json({ error: "Invalid first name or ID" }, { status: 401 })
+      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 })
     }
 
     return NextResponse.json({ user })

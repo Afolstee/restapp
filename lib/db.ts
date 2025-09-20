@@ -1,17 +1,11 @@
 // Supabase database functions
 import { createClient } from './supabase/server'
 
-// SQL query function for Supabase
+// Simple query function for compatibility (deprecated - use Supabase client directly)
 export async function query(text: string, params: any[] = []) {
-  const supabase = createClient()
-  const { data, error } = await supabase.rpc('query', { query_text: text, query_params: params })
-  
-  if (error) {
-    console.error('Database query error:', error)
-    throw error
-  }
-  
-  return { rows: data || [] }
+  console.warn('query() function is deprecated. Use Supabase client directly.')
+  // Return empty results for compatibility
+  return { rows: [] }
 }
 
 // Supabase helper functions

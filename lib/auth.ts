@@ -47,26 +47,27 @@ export async function getUser(): Promise<User | null> {
     return null
   }
 
-  // Get user profile from users table
+  // Get user profile from users table (matching existing schema)
   const { data: profile, error: profileError } = await supabase
     .from('users')
     .select('*')
-    .eq('id', user.id)
+    .eq('email', user.email)
     .single()
 
   if (profileError || !profile) {
     return null
   }
 
+  const nameParts = profile.name.split(' ')
   return {
-    id: profile.id,
+    id: profile.id.toString(),
     email: profile.email,
-    firstName: profile.first_name,
-    lastName: profile.last_name,
-    fullName: `${profile.first_name} ${profile.last_name}`,
-    userPassword: profile.user_password,
+    firstName: nameParts[0] || 'User',
+    lastName: nameParts[1] || '',
+    fullName: profile.name,
+    userPassword: '', // Not used in Supabase auth
     role: profile.role,
-    isActive: profile.is_active
+    isActive: true
   }
 }
 

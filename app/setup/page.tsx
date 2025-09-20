@@ -27,8 +27,8 @@ export default function SetupPage() {
         body: JSON.stringify({
           email: "admin@restaurant.com",
           password: "0919RW",
-          name: "Admin User",
-          role: "admin",
+          name: "Admin Restaurant",
+          role: "admin"
         }),
       })
 

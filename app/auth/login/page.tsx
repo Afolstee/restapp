@@ -11,8 +11,8 @@ import { useState } from "react"
 import { ChefHat } from "lucide-react"
 
 export default function LoginPage() {
-  const [firstName, setFirstName] = useState("")
-  const [userPassword, setUserPassword] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
@@ -23,14 +23,14 @@ export default function LoginPage() {
     setError(null)
 
     try {
-      console.log("[v0] Attempting login with firstName:", firstName)
+      console.log("[v0] Attempting login with email:", email)
 
       const response = await fetch("/api/auth/login", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ firstName, userPassword }),
+        body: JSON.stringify({ email, password }),
       })
 
       const result = await response.json()
@@ -68,30 +68,30 @@ export default function LoginPage() {
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="firstName" className="text-sm font-medium text-gray-700">
-                  First Name
+                <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                  Email
                 </Label>
                 <Input
-                  id="firstName"
-                  type="text"
-                  placeholder="Enter your first name"
+                  id="email"
+                  type="email"
+                  placeholder="Enter your email"
                   required
-                  value={firstName}
-                  onChange={(e) => setFirstName(e.target.value)}
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   className="h-12"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="userPassword" className="text-sm font-medium text-gray-700">
-                  ID (Password)
+                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                  Password
                 </Label>
                 <Input
-                  id="userPassword"
+                  id="password"
                   type="password"
-                  placeholder="Enter your generated ID"
+                  placeholder="Enter your password"
                   required
-                  value={userPassword}
-                  onChange={(e) => setUserPassword(e.target.value)}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="h-12"
                 />
               </div>
@@ -109,8 +109,8 @@ export default function LoginPage() {
 
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
               <p className="text-sm text-blue-800 font-medium">Demo Credentials:</p>
-              <p className="text-xs text-blue-600">First Name: Restwebbapp</p>
-              <p className="text-xs text-blue-600">ID: 0919RW</p>
+              <p className="text-xs text-blue-600">Email: admin@restaurant.com</p>
+              <p className="text-xs text-blue-600">Password: 0919RW</p>
             </div>
 
             <div className="mt-6 text-center text-sm space-y-2">
