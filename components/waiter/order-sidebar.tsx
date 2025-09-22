@@ -122,7 +122,7 @@ export function OrderSidebar({
 
       toast({
         title: "Order Submitted",
-        description: `Order for table ${order.table_number} has been submitted successfully.`,
+        description: `Order has been submitted successfully.`,
       })
     } catch (error) {
       console.error("Error submitting order:", error)

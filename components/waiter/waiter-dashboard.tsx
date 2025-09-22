@@ -27,12 +27,11 @@ import { Clock, User, LogOut, Search, Plus, Utensils } from "lucide-react"
 interface MenuItem {
   id: string
   name: string
-  description: string
+  description?: string
   price: number
-  category: string
-  image_url?: string
+  type: "food" | "drinks"
   is_available: boolean
-  quantity?: number | null // Stock quantity for drinks
+  quantity?: number // Stock quantity for drinks only
 }
 
 interface OrderItem {
@@ -65,6 +64,21 @@ export function WaiterDashboard() {
   useEffect(() => {
     fetchMenuItems()
     getCurrentUser()
+    
+    // Listen for localStorage changes (when admin updates menu)
+    const handleStorageChange = () => {
+      fetchMenuItems()
+    }
+    
+    window.addEventListener('storage', handleStorageChange)
+    
+    // Also poll for changes every 2 seconds to catch same-tab updates
+    const pollInterval = setInterval(fetchMenuItems, 2000)
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+      clearInterval(pollInterval)
+    }
   }, [])
 
   const getCurrentUser = async () => {
@@ -77,14 +91,20 @@ export function WaiterDashboard() {
     }
   }
 
-  const fetchMenuItems = async () => {
-    const { data, error } = await supabase
-      .from("menu_items")
-      .select("*")
-      .order("category", { ascending: true })
-
-    if (data) {
-      setMenuItems(data)
+  const fetchMenuItems = () => {
+    try {
+      const stored = localStorage.getItem("restaurant-menu-items")
+      if (stored) {
+        const items = JSON.parse(stored)
+        // Sort by type for consistency
+        const sortedItems = items.sort((a: MenuItem, b: MenuItem) => a.type.localeCompare(b.type))
+        setMenuItems(sortedItems)
+      } else {
+        setMenuItems([])
+      }
+    } catch (error) {
+      console.error("Error fetching menu items from localStorage:", error)
+      setMenuItems([])
     }
   }
 
@@ -199,9 +219,12 @@ export function WaiterDashboard() {
 
   const filteredItems = menuItems.filter((item) => {
     const matchesSearch =
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description?.toLowerCase().includes(searchQuery.toLowerCase())
-    return matchesSearch
+      item.name.toLowerCase().includes(searchQuery.toLowerCase())
+    
+    // Filter by tab
+    const matchesTab = activeTab === "bar" ? item.type === "drinks" : item.type === "food"
+    
+    return matchesSearch && matchesTab
   })
 
   const orderTotal = currentOrder.items.reduce((sum, item) => sum + item.total_price, 0)

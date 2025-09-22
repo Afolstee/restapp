@@ -11,7 +11,6 @@ import StaffManagement from "./staff-management"
 import { MenuManagement } from "./menu-management"
 import { OrdersOverview } from "./orders-overview"
 import { SalesAnalytics } from "./sales-analytics"
-import { AccountCreation } from "./account-creation"
 import { ThemeToggle } from "@/components/theme-toggle"
 import {
   AlertDialog,
@@ -188,10 +187,6 @@ export function AdminDashboard() {
               <Users className="w-4 h-4" />
               Staff
             </TabsTrigger>
-            <TabsTrigger value="accounts" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Create Account
-            </TabsTrigger>
             <TabsTrigger value="analytics" className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
               Analytics
@@ -315,10 +310,6 @@ export function AdminDashboard() {
 
           <TabsContent value="staff">
             <StaffManagement />
-          </TabsContent>
-
-          <TabsContent value="accounts">
-            <AccountCreation />
           </TabsContent>
 
           <TabsContent value="analytics">

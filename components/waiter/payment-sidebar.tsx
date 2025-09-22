@@ -16,12 +16,11 @@ import { ReceiptButton } from "@/components/ui/receipt-button"
 interface MenuItem {
   id: string
   name: string
-  description: string
+  description?: string
   price: number
-  category: string
-  image_url?: string
+  type: "food" | "drinks"
   is_available: boolean
-  quantity?: number | null
+  quantity?: number
 }
 
 interface OrderItem {
@@ -155,7 +154,7 @@ export function PaymentSidebar({
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex-1">
                       <h4 className="font-medium text-sm">{item.menu_item.name}</h4>
-                      <p className="text-xs text-muted-foreground">${item.unit_price.toFixed(2)} each</p>
+                      <p className="text-xs text-muted-foreground">₦{item.unit_price.toFixed(2)} each</p>
                     </div>
                     <Button
                       variant="ghost"
@@ -192,7 +191,7 @@ export function PaymentSidebar({
                         <Plus className="w-3 h-3" />
                       </Button>
                     </div>
-                    <Badge variant="secondary">${item.total_price.toFixed(2)}</Badge>
+                    <Badge variant="secondary">₦{item.total_price.toFixed(2)}</Badge>
                   </div>
                 </Card>
               ))}

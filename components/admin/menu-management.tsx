@@ -241,7 +241,7 @@ export function MenuManagement() {
                     />
                   </div>
                   <div>
-                    <Label htmlFor="price">Price ($)</Label>
+                    <Label htmlFor="price">Price (₦)</Label>
                     <Input
                       id="price"
                       type="number"
@@ -313,7 +313,7 @@ export function MenuManagement() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="price">Price ($)</Label>
+                      <Label htmlFor="price">Price (₦)</Label>
                       <Input
                         id="price"
                         type="number"
@@ -403,7 +403,7 @@ export function MenuManagement() {
                       </Badge>
                     </div>
                     <div className="flex items-center justify-between mb-3">
-                      <span className="font-bold text-primary">${item.price.toFixed(2)}</span>
+                      <span className="font-bold text-primary">₦{item.price.toFixed(2)}</span>
                       {item.type === "drinks" && item.quantity && (
                         <span className="text-xs text-muted-foreground">Qty: {item.quantity}</span>
                       )}

@@ -8,12 +8,11 @@ import { Plus, AlertTriangle } from "lucide-react"
 interface MenuItem {
   id: string
   name: string
-  description: string
+  description?: string
   price: number
-  category: string
-  image_url?: string
+  type: "food" | "drinks"
   is_available: boolean
-  quantity?: number | null // Only for drinks
+  quantity?: number // Only for drinks
 }
 
 interface ProductGridProps {
@@ -29,14 +28,9 @@ export function ProductGrid({ items, activeTab, onAddToOrder }: ProductGridProps
     'spirits', 'soft drinks', 'juices', 'coffee', 'tea'
   ])
 
-  // Filter items based on active tab
+  // Filter items based on active tab using the type field from admin dashboard
   const filteredItems = items.filter(item => {
-    const categoryLower = item.category.toLowerCase()
-    const isBarItem = barCategories.has(categoryLower) || 
-                      // Fallback to checking if item has quantity (drinks have stock, food doesn't)
-                      (item.quantity !== null && item.quantity !== undefined)
-    
-    return activeTab === "bar" ? isBarItem : !isBarItem
+    return activeTab === "bar" ? item.type === "drinks" : item.type === "food"
   })
 
   // Check if drink is low stock (less than 10 units)
@@ -92,7 +86,10 @@ export function ProductGrid({ items, activeTab, onAddToOrder }: ProductGridProps
                     </div>
                   )}
                   
-                  <p className="text-sm text-muted-foreground line-clamp-3 mb-4">{item.description}</p>
+                  {/* Only show description if it exists */}
+                  {item.description && (
+                    <p className="text-sm text-muted-foreground line-clamp-3 mb-4">{item.description}</p>
+                  )}
                 </div>
                 
                 <Button
