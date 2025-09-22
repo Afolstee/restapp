@@ -6,10 +6,11 @@ import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
-import { MenuGrid } from "./menu-grid"
-import { OrderSidebar } from "./order-sidebar"
-import { ActiveOrders } from "./active-orders"
+import { ProductGrid } from "./product-grid"
+import { PaymentSidebar } from "./payment-sidebar"
+import { MenuTabs } from "./menu-tabs"
 import { ThemeToggle } from "@/components/theme-toggle"
+import { useToast } from "@/hooks/use-toast"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +32,7 @@ interface MenuItem {
   category: string
   image_url?: string
   is_available: boolean
+  quantity?: number | null // Stock quantity for drinks
 }
 
 interface OrderItem {
@@ -45,22 +47,18 @@ interface OrderItem {
 
 interface CurrentOrder {
   items: OrderItem[]
-  table_number: number
-  customer_name?: string
-  special_instructions?: string
 }
 
 export function WaiterDashboard() {
   const [menuItems, setMenuItems] = useState<MenuItem[]>([])
   const [currentOrder, setCurrentOrder] = useState<CurrentOrder>({
     items: [],
-    table_number: 1,
   })
-  const [activeView, setActiveView] = useState<"menu" | "orders">("menu")
+  const [activeTab, setActiveTab] = useState<"bar" | "food">("bar")
   const [searchQuery, setSearchQuery] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState<string>("all")
   const [user, setUser] = useState<any>(null)
   const router = useRouter()
+  const { toast } = useToast()
 
   const supabase = createClient()
 
@@ -83,7 +81,6 @@ export function WaiterDashboard() {
     const { data, error } = await supabase
       .from("menu_items")
       .select("*")
-      .eq("is_available", true)
       .order("category", { ascending: true })
 
     if (data) {
@@ -92,6 +89,22 @@ export function WaiterDashboard() {
   }
 
   const addToOrder = (menuItem: MenuItem, quantity = 1) => {
+    // Check stock availability for drinks
+    if (menuItem.quantity !== null && menuItem.quantity !== undefined) {
+      const currentInOrder = currentOrder.items
+        .filter(item => item.menu_item_id === menuItem.id)
+        .reduce((sum, item) => sum + item.quantity, 0)
+      
+      if (currentInOrder + quantity > menuItem.quantity) {
+        toast({
+          title: "Insufficient Stock",
+          description: `Only ${menuItem.quantity - currentInOrder} ${menuItem.name} remaining in stock.`,
+          variant: "destructive",
+        })
+        return
+      }
+    }
+
     const existingItemIndex = currentOrder.items.findIndex((item) => item.menu_item_id === menuItem.id)
 
     if (existingItemIndex >= 0) {
@@ -135,10 +148,34 @@ export function WaiterDashboard() {
 
     const updatedItems = currentOrder.items.map((item) => {
       if (item.id === itemId) {
+        // Clamp quantity to stock limits for drinks
+        let clampedQuantity = quantity
+        if (item.menu_item.quantity !== null && item.menu_item.quantity !== undefined) {
+          const maxAllowed = Math.min(item.menu_item.quantity, 100)
+          if (quantity > maxAllowed) {
+            clampedQuantity = maxAllowed
+            toast({
+              title: "Quantity Limited",
+              description: `Maximum ${maxAllowed} ${item.menu_item.name} available.`,
+              variant: "default",
+            })
+          }
+        } else {
+          // Clamp food items to 100
+          if (quantity > 100) {
+            clampedQuantity = 100
+            toast({
+              title: "Quantity Limited",
+              description: `Maximum 100 items allowed per order.`,
+              variant: "default",
+            })
+          }
+        }
+        
         return {
           ...item,
-          quantity,
-          total_price: item.unit_price * quantity,
+          quantity: clampedQuantity,
+          total_price: item.unit_price * clampedQuantity,
         }
       }
       return item
@@ -160,14 +197,11 @@ export function WaiterDashboard() {
     }
   }
 
-  const categories = ["all", ...new Set(menuItems.map((item) => item.category))]
-
   const filteredItems = menuItems.filter((item) => {
     const matchesSearch =
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.description?.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesCategory = selectedCategory === "all" || item.category === selectedCategory
-    return matchesSearch && matchesCategory
+    return matchesSearch
   })
 
   const orderTotal = currentOrder.items.reduce((sum, item) => sum + item.total_price, 0)
@@ -180,7 +214,7 @@ export function WaiterDashboard() {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <Utensils className="w-8 h-8 text-primary" />
-              <h1 className="text-2xl font-bold">Restaurant POS</h1>
+              <h1 className="text-2xl font-bold">Bar POS</h1>
             </div>
             <Badge variant="secondary" className="bg-primary/20 text-primary">
               Waiter Dashboard
@@ -228,67 +262,35 @@ export function WaiterDashboard() {
         <div className="flex-1 flex flex-col">
           {/* Navigation */}
           <div className="flex items-center justify-between p-4 border-b border-border">
-            <div className="flex gap-2">
-              <Button
-                variant={activeView === "menu" ? "default" : "ghost"}
-                onClick={() => setActiveView("menu")}
-                className="gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                New Order
-              </Button>
-              <Button
-                variant={activeView === "orders" ? "default" : "ghost"}
-                onClick={() => setActiveView("orders")}
-                className="gap-2"
-              >
-                <Clock className="w-4 h-4" />
-                Active Orders
-              </Button>
-            </div>
+            <MenuTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-            {activeView === "menu" && (
-              <div className="flex items-center gap-4">
-                <div className="relative">
-                  <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    placeholder="Search menu items..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="pl-10 w-64"
-                  />
-                </div>
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="px-3 py-2 bg-input border border-border rounded-md text-sm"
-                >
-                  {categories.map((category) => (
-                    <option key={category} value={category}>
-                      {category === "all" ? "All Categories" : category}
-                    </option>
-                  ))}
-                </select>
+            <div className="flex items-center gap-4">
+              <div className="relative">
+                <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  placeholder="Search menu items..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 w-64"
+                />
               </div>
-            )}
+            </div>
           </div>
 
           {/* Content Area */}
           <div className="flex-1 p-4">
-            {activeView === "menu" ? <MenuGrid items={filteredItems} onAddToOrder={addToOrder} /> : <ActiveOrders />}
+            <ProductGrid items={filteredItems} activeTab={activeTab} onAddToOrder={addToOrder} />
           </div>
         </div>
 
-        {/* Order Sidebar */}
-        {activeView === "menu" && (
-          <OrderSidebar
-            currentOrder={currentOrder}
-            onUpdateOrder={setCurrentOrder}
-            onUpdateItem={updateOrderItem}
-            onRemoveItem={removeFromOrder}
-            orderTotal={orderTotal}
-          />
-        )}
+        {/* Payment Sidebar */}
+        <PaymentSidebar
+          currentOrder={currentOrder}
+          onUpdateOrder={setCurrentOrder}
+          onUpdateItem={updateOrderItem}
+          onRemoveItem={removeFromOrder}
+          orderTotal={orderTotal}
+        />
       </div>
     </div>
   )
