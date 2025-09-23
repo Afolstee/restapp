@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Plus, UserX } from "lucide-react"
+import { Plus, UserX, Loader2 } from "lucide-react"
 import { createClient } from "@/lib/supabase/client"
 
 interface Staff {
@@ -115,7 +115,14 @@ export default function StaffManagement() {
   }, [])
 
   if (isLoading) {
-    return <div className="p-6">Loading staff...</div>
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="flex items-center gap-2 text-muted-foreground">
+          <Loader2 className="w-5 h-5 animate-spin" />
+          Loading staff...
+        </div>
+      </div>
+    )
   }
 
   return (

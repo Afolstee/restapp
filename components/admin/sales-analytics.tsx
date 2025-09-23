@@ -38,7 +38,7 @@ interface Order {
   order_items: OrderItem[]
 }
 
-interface Analytics {
+interface Finance {
   totalRevenue: number
   totalOrders: number
   averageOrderValue: number
@@ -51,8 +51,8 @@ interface Analytics {
   salesByCategory: CategoryData[]
 }
 
-export function SalesAnalytics() {
-  const [analytics, setAnalytics] = useState<Analytics>({
+export function SalesFinance() {
+  const [finance, setFinance] = useState<Finance>({
     totalRevenue: 0,
     totalOrders: 0,
     averageOrderValue: 0,
@@ -66,10 +66,10 @@ export function SalesAnalytics() {
   const supabase = createClient()
 
   useEffect(() => {
-    fetchAnalytics()
+    fetchFinance()
   }, [timeRange])
 
-  const fetchAnalytics = async () => {
+  const fetchFinance = async () => {
     try {
       const daysBack = timeRange === "7days" ? 7 : timeRange === "30days" ? 30 : 90
       const startDate = new Date()
@@ -96,7 +96,7 @@ export function SalesAnalytics() {
 
       const typedOrders = orders as Order[] | null
 
-      // Calculate analytics
+      // Calculate finance
       const totalRevenue = typedOrders?.reduce((sum, order) => sum + order.total_amount, 0) || 0
       const totalOrders = typedOrders?.length || 0
       const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0
@@ -154,7 +154,7 @@ export function SalesAnalytics() {
         .sort((a, b) => b.quantity - a.quantity)
         .slice(0, 5)
 
-      setAnalytics({
+      setFinance({
         totalRevenue,
         totalOrders,
         averageOrderValue,
@@ -163,7 +163,7 @@ export function SalesAnalytics() {
         salesByCategory,
       })
     } catch (error) {
-      console.error("Error fetching analytics:", error)
+      console.error("Error fetching finance:", error)
     } finally {
       setLoading(false)
     }
@@ -174,7 +174,7 @@ export function SalesAnalytics() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="text-muted-foreground">Loading analytics...</div>
+        <div className="text-muted-foreground">Loading finance...</div>
       </div>
     )
   }
@@ -183,7 +183,7 @@ export function SalesAnalytics() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Sales Analytics</h2>
+          <h2 className="text-2xl font-bold">Finance</h2>
           <p className="text-muted-foreground">Track restaurant performance and trends</p>
         </div>
         <Select value={timeRange} onValueChange={setTimeRange}>
@@ -206,7 +206,7 @@ export function SalesAnalytics() {
             <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">₦{analytics.totalRevenue.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-primary">₦{finance.totalRevenue.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">
               {timeRange === "7days" ? "Last 7 days" : timeRange === "30days" ? "Last 30 days" : "Last 90 days"}
             </p>
@@ -219,7 +219,7 @@ export function SalesAnalytics() {
             <ShoppingBag className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">{analytics.totalOrders}</div>
+            <div className="text-2xl font-bold text-primary">{finance.totalOrders}</div>
             <p className="text-xs text-muted-foreground">Completed orders</p>
           </CardContent>
         </Card>
@@ -230,7 +230,7 @@ export function SalesAnalytics() {
             <TrendingUp className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-primary">₦{analytics.averageOrderValue.toFixed(2)}</div>
+            <div className="text-2xl font-bold text-primary">₦{finance.averageOrderValue.toFixed(2)}</div>
             <p className="text-xs text-muted-foreground">Per order average</p>
           </CardContent>
         </Card>
@@ -242,7 +242,7 @@ export function SalesAnalytics() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-primary">
-              {(analytics.totalOrders / (timeRange === "7days" ? 7 : timeRange === "30days" ? 30 : 90)).toFixed(1)}
+              {(finance.totalOrders / (timeRange === "7days" ? 7 : timeRange === "30days" ? 30 : 90)).toFixed(1)}
             </div>
             <p className="text-xs text-muted-foreground">Orders per day</p>
           </CardContent>
@@ -257,7 +257,7 @@ export function SalesAnalytics() {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={analytics.salesByDay}>
+              <BarChart data={finance.salesByDay}>
                 <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
                 <XAxis dataKey="date" stroke="rgba(255,255,255,0.6)" />
                 <YAxis stroke="rgba(255,255,255,0.6)" />
@@ -282,7 +282,7 @@ export function SalesAnalytics() {
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
-                  data={analytics.salesByCategory}
+                  data={finance.salesByCategory}
                   cx="50%"
                   cy="50%"
                   labelLine={false}
@@ -291,7 +291,7 @@ export function SalesAnalytics() {
                   fill="#8884d8"
                   dataKey="revenue"
                 >
-                  {analytics.salesByCategory.map((entry, index) => (
+                  {finance.salesByCategory.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                   ))}
                 </Pie>
@@ -315,7 +315,7 @@ export function SalesAnalytics() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {analytics.topSellingItems.map((item, index) => (
+            {finance.topSellingItems.map((item, index) => (
               <div key={item.name} className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Badge variant="secondary" className="w-8 h-8 rounded-full flex items-center justify-center">

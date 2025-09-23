@@ -22,7 +22,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Clock, User, LogOut, Search, Plus, Utensils } from "lucide-react"
+import { Clock, User, LogOut, Search, Plus, Wine } from "lucide-react"
 
 interface MenuItem {
   id: string
@@ -236,7 +236,7 @@ export function WaiterDashboard() {
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <Utensils className="w-8 h-8 text-primary" />
+              <Wine className="w-8 h-8 text-primary" />
               <h1 className="text-2xl font-bold">Bar POS</h1>
             </div>
             <Badge variant="secondary" className="bg-primary/20 text-primary">
@@ -245,12 +245,6 @@ export function WaiterDashboard() {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <User className="w-4 h-4" />
-              <span>
-                {user?.profile?.first_name} {user?.profile?.last_name}
-              </span>
-            </div>
             <ThemeToggle />
             <AlertDialog>
               <AlertDialogTrigger asChild>

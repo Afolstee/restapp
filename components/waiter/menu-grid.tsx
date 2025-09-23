@@ -49,7 +49,7 @@ export function MenuGrid({ items, onAddToOrder }: MenuGridProps) {
                       <div className="flex items-start justify-between mb-2">
                         <h3 className="font-semibold text-lg text-foreground line-clamp-2">{item.name}</h3>
                         <Badge variant="secondary" className="ml-2 bg-primary/20 text-primary">
-                          ${item.price.toFixed(2)}
+                          ₦{item.price.toFixed(2)}
                         </Badge>
                       </div>
                       <p className="text-sm text-muted-foreground line-clamp-3 mb-4">{item.description}</p>

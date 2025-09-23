@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import StaffManagement from "./staff-management"
 import { MenuManagement } from "./menu-management"
 import { OrdersOverview } from "./orders-overview"
-import { SalesAnalytics } from "./sales-analytics"
+import { SalesFinance } from "./sales-analytics"
 import { ThemeToggle } from "@/components/theme-toggle"
 import {
   AlertDialog,
@@ -25,7 +25,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import {
   Users,
-  Utensils,
+  Wine,
+  Book,
   ClipboardList,
   BarChart3,
   LogOut,
@@ -38,7 +39,7 @@ import {
 interface DashboardStats {
   totalOrders: number
   totalRevenue: number
-  activeOrders: number
+  LowStock: number
   totalStaff: number
   todayOrders: number
   todayRevenue: number
@@ -49,7 +50,7 @@ export function AdminDashboard() {
   const [stats, setStats] = useState<DashboardStats>({
     totalOrders: 0,
     totalRevenue: 0,
-    activeOrders: 0,
+    LowStock: 0,
     totalStaff: 0,
     todayOrders: 0,
     todayRevenue: 0,
@@ -80,7 +81,7 @@ export function AdminDashboard() {
       const { data: allOrders } = await supabase.from("orders").select("total_amount, created_at, status")
 
       // Get active orders
-      const { data: activeOrders } = await supabase
+      const { data: LowStock } = await supabase
         .from("orders")
         .select("id")
         .in("status", ["pending", "confirmed", "preparing", "ready"])
@@ -98,7 +99,7 @@ export function AdminDashboard() {
       setStats({
         totalOrders: allOrders?.length || 0,
         totalRevenue,
-        activeOrders: activeOrders?.length || 0,
+        LowStock: LowStock?.length || 0,
         totalStaff: staff?.length || 0,
         todayOrders: todayOrders.length,
         todayRevenue,
@@ -125,8 +126,8 @@ export function AdminDashboard() {
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <Utensils className="w-8 h-8 text-primary" />
-              <h1 className="text-2xl font-bold">Restaurant</h1>
+              <Wine className="w-8 h-8 text-primary" />
+              <h1 className="text-2xl font-bold">Bar</h1>
             </div>
             <Badge variant="secondary" className="bg-primary/20 text-primary">
               Admin Dashboard
@@ -134,11 +135,6 @@ export function AdminDashboard() {
           </div>
 
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <span>
-                Welcome, {user?.profile?.first_name} {user?.profile?.last_name}
-              </span>
-            </div>
             <ThemeToggle />
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -180,16 +176,16 @@ export function AdminDashboard() {
               Orders
             </TabsTrigger>
             <TabsTrigger value="menu" className="flex items-center gap-2">
-              <Utensils className="w-4 h-4" />
+              <Book className="w-4 h-4" />
               Menu
             </TabsTrigger>
             <TabsTrigger value="staff" className="flex items-center gap-2">
               <Users className="w-4 h-4" />
               Staff
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <TabsTrigger value="finance" className="flex items-center gap-2">
               <TrendingUp className="w-4 h-4" />
-              Analytics
+              Finance
             </TabsTrigger>
           </TabsList>
 
@@ -220,12 +216,12 @@ export function AdminDashboard() {
 
               <Card className="bg-card/50 backdrop-blur-sm border-border">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Orders</CardTitle>
+                  <CardTitle className="text-sm font-medium">Low Stock</CardTitle>
                   <Clock className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-primary">{stats.activeOrders}</div>
-                  <p className="text-xs text-muted-foreground">Pending & In Progress</p>
+                  <div className="text-2xl font-bold text-primary">{stats.LowStock}</div>
+                  <p className="text-xs text-muted-foreground">Low Items</p>
                 </CardContent>
               </Card>
 
@@ -256,44 +252,36 @@ export function AdminDashboard() {
                     View All Orders
                   </Button>
                   <Button onClick={() => setActiveTab("menu")} variant="outline" className="w-full justify-start">
-                    <Utensils className="w-4 h-4 mr-2" />
                     Manage Menu Items
                   </Button>
                   <Button onClick={() => setActiveTab("staff")} variant="outline" className="w-full justify-start">
                     <Users className="w-4 h-4 mr-2" />
                     Manage Staff
                   </Button>
-                  <Button onClick={() => setActiveTab("accounts")} variant="outline" className="w-full justify-start">
-                    <Users className="w-4 h-4 mr-2" />
-                    Create Account
-                  </Button>
-                  <Button onClick={() => setActiveTab("analytics")} variant="outline" className="w-full justify-start">
+                  <Button onClick={() => setActiveTab("finance")} variant="outline" className="w-full justify-start">
                     <BarChart3 className="w-4 h-4 mr-2" />
-                    View Analytics
+                    View Finance
                   </Button>
                 </CardContent>
               </Card>
 
               <Card className="bg-card/50 backdrop-blur-sm border-border">
                 <CardHeader>
-                  <CardTitle>System Status</CardTitle>
+                  <CardTitle>System Mock</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm">Database Connection</span>
-                    <Badge className="bg-green-500/20 text-green-400">Online</Badge>
+                    <span className="text-sm">Mock</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm">Payment System</span>
+                    <span className="text-sm">Mock System</span>
                     <Badge className="bg-green-500/20 text-green-400">Active</Badge>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm">Kitchen Display</span>
-                    <Badge className="bg-green-500/20 text-green-400">Connected</Badge>
+                    <span className="text-sm">Mock system</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm">Last Backup</span>
-                    <span className="text-sm text-muted-foreground">2 hours ago</span>
+                    <span className="text-sm">Mock System</span>
                   </div>
                 </CardContent>
               </Card>
@@ -312,8 +300,8 @@ export function AdminDashboard() {
             <StaffManagement />
           </TabsContent>
 
-          <TabsContent value="analytics">
-            <SalesAnalytics />
+          <TabsContent value="finance">
+            <SalesFinance />
           </TabsContent>
         </Tabs>
       </div>
