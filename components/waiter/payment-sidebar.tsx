@@ -1,17 +1,15 @@
 "use client"
 
 import { useState } from "react"
-import { createClient } from "@/lib/supabase/client"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Badge } from "@/components/ui/badge"
 import { Separator } from "@/components/ui/separator"
-import { Minus, Plus, Trash2, CreditCard, Banknote } from "lucide-react"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Minus, Plus, Trash2, CreditCard, Banknote, Printer, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { ReceiptButton } from "@/components/ui/receipt-button"
 
 interface MenuItem {
   id: string
@@ -35,7 +33,6 @@ interface OrderItem {
 
 interface CurrentOrder {
   items: OrderItem[]
-
 }
 
 interface PaymentSidebarProps {
@@ -54,12 +51,175 @@ export function PaymentSidebar({
   orderTotal,
 }: PaymentSidebarProps) {
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submittedOrderId, setSubmittedOrderId] = useState<string | null>(null)
+  const [showReceiptModal, setShowReceiptModal] = useState(false)
   const [paymentMethod, setPaymentMethod] = useState<"cash" | "card">("cash")
+  const [receiptData, setReceiptData] = useState<any>(null)
   const { toast } = useToast()
-  const supabase = createClient()
 
-  const handleProcessPayment = async () => {
+  // Generate a simple receipt ID
+  const generateReceiptId = () => {
+    const timestamp = Date.now().toString().slice(-8)
+    const random = Math.floor(Math.random() * 1000).toString().padStart(3, "0")
+    return `RCP-${timestamp}-${random}`
+  }
+
+  // Save receipt to localStorage
+  const saveReceiptToStorage = (receipt: any) => {
+    try {
+      const existingReceipts = localStorage.getItem("pos_receipts")
+      const receipts = existingReceipts ? JSON.parse(existingReceipts) : []
+
+      const newReceipt = {
+        id: receipt.id,
+        receiptId: receipt.receiptId,
+        date: receipt.date,
+        timestamp: Date.now(),
+        paymentMethod: receipt.paymentMethod,
+        items: receipt.items,
+        total: receipt.total,
+        tableNumber: receipt.tableNumber || 1,
+        customerName: receipt.customerName || "",
+        waiterName: receipt.waiterName || "Current User",
+      }
+
+      receipts.unshift(newReceipt)
+      localStorage.setItem("pos_receipts", JSON.stringify(receipts))
+
+      console.log("Receipt saved to localStorage:", newReceipt)
+    } catch (error) {
+      console.error("Error saving receipt to localStorage:", error)
+    }
+  }
+
+  const generateReceiptHTML = (order: any) => {
+    return `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Receipt - ${order.receiptId}</title>
+          <style>
+            body {
+              font-family: 'Courier New', monospace;
+              max-width: 300px;
+              margin: 0 auto;
+              padding: 20px;
+              background: white;
+              color: black;
+            }
+            .header {
+              text-align: center;
+              border-bottom: 2px solid #000;
+              padding-bottom: 10px;
+              margin-bottom: 15px;
+            }
+            .restaurant-name {
+              font-size: 18px;
+              font-weight: bold;
+              margin-bottom: 5px;
+            }
+            .restaurant-info {
+              font-size: 12px;
+              margin-bottom: 2px;
+            }
+            .order-info {
+              margin-bottom: 15px;
+              font-size: 12px;
+            }
+            .order-info div {
+              margin-bottom: 3px;
+            }
+            .items {
+              margin-bottom: 15px;
+            }
+            .item {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 5px;
+              font-size: 12px;
+            }
+            .item-name {
+              flex: 1;
+              margin-right: 10px;
+            }
+            .item-qty {
+              margin-right: 10px;
+            }
+            .item-price {
+              text-align: right;
+              min-width: 50px;
+            }
+            .totals {
+              border-top: 1px solid #000;
+              padding-top: 10px;
+              margin-top: 15px;
+            }
+            .total-line {
+              display: flex;
+              justify-content: space-between;
+              margin-bottom: 5px;
+              font-size: 12px;
+            }
+            .final-total {
+              font-weight: bold;
+              font-size: 14px;
+              border-top: 1px solid #000;
+              padding-top: 5px;
+              margin-top: 5px;
+            }
+            .footer {
+              text-align: center;
+              margin-top: 20px;
+              padding-top: 15px;
+              border-top: 1px solid #000;
+              font-size: 11px;
+            }
+            @media print {
+              body { margin: 0; padding: 10px; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div class="restaurant-name">Bar POS</div>
+            <div class="restaurant-info">26, Mock Street, Nigeria</div>
+          </div>
+
+          <div class="order-info">
+            <div><strong>Receipt ID:</strong> ${order.receiptId}</div>
+            <div><strong>Date:</strong> ${order.date}</div>
+            <div><strong>Payment Method:</strong> ${order.paymentMethod.toUpperCase()}</div>
+          </div>
+
+          <div class="items">
+            ${order.items
+              .map(
+                (item: any) => `
+              <div class="item">
+                <div class="item-name">${item.menu_item.name}</div>
+                <div class="item-qty">${item.quantity}x</div>
+                <div class="item-price">₦${item.total_price.toFixed(2)}</div>
+              </div>
+            `
+              )
+              .join("")}
+          </div>
+
+          <div class="totals">
+            <div class="total-line final-total">
+              <span>TOTAL:</span>
+              <span>₦${order.total.toFixed(2)}</span>
+            </div>
+          </div>
+
+          <div class="footer">
+            <div>Thanks for your patronage. We hope to see you again.</div>
+          </div>
+        </body>
+      </html>
+    `
+  }
+
+  const handleProcessPayment = () => {
     if (currentOrder.items.length === 0) {
       toast({
         title: "Empty Order",
@@ -71,68 +231,36 @@ export function PaymentSidebar({
 
     setIsSubmitting(true)
 
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+    setTimeout(() => {
+      const receiptId = generateReceiptId()
+      const orderId = `order-${Date.now()}`
 
-      if (!user) {
-        throw new Error("User not authenticated")
+      const receipt = {
+        id: orderId,
+        receiptId,
+        date: new Date().toLocaleString(),
+        paymentMethod,
+        items: currentOrder.items,
+        total: orderTotal,
+        tableNumber: 1,
+        customerName: "",
+        waiterName: "Current User",
       }
 
-      // Prepare order items for the database function
-      const orderItems = currentOrder.items.map((item) => ({
-        menu_item_id: item.menu_item_id,
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        total_price: item.total_price,
-        special_requests: item.special_requests,
-        name: item.menu_item.name
-      }))
+      // Save to localStorage
+      saveReceiptToStorage(receipt)
 
-      // Call the database function to process order with atomic stock updates
-      const { data: result, error } = await supabase.rpc('process_order_with_stock', {
-        p_payment_method: paymentMethod,
-        p_order_items: orderItems
-      })
+      setReceiptData(receipt)
+      setShowReceiptModal(true)
+      setIsSubmitting(false)
 
-      if (error) throw error
-
-      if (!result.success) {
-        let description = result.error
-        if (result.code === 'insufficient_stock' && result.items) {
-          description = `Insufficient stock for: ${result.items.join(', ')}`
-        }
-        toast({
-          title: "Order Failed",
-          description,
-          variant: "destructive",
-        })
-        return
-      }
-
-      // Store the submitted order ID for receipt generation
-      setSubmittedOrderId(result.order_id)
-
-      // Clear the current order
-      onUpdateOrder({
-        items: [],
-      })
+      onUpdateOrder({ items: [] })
 
       toast({
         title: "Payment Processed",
         description: `Payment has been processed successfully via ${paymentMethod}.`,
       })
-    } catch (error) {
-      console.error("Error processing payment:", error)
-      toast({
-        title: "Error",
-        description: "Failed to process payment. Please try again.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsSubmitting(false)
-    }
+    }, 1000)
   }
 
   return (
@@ -146,7 +274,9 @@ export function PaymentSidebar({
         <div className="flex-1 space-y-2">
           <Label className="text-sm font-medium">Items Ordered</Label>
           {currentOrder.items.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-8 text-center">No items in order</p>
+            <p className="text-sm text-muted-foreground py-8 text-center">
+              No items in order
+            </p>
           ) : (
             <div className="space-y-2 max-h-64 overflow-y-auto">
               {currentOrder.items.map((item) => (
@@ -154,7 +284,9 @@ export function PaymentSidebar({
                   <div className="flex justify-between items-start mb-2">
                     <div className="flex-1">
                       <h4 className="font-medium text-sm">{item.menu_item.name}</h4>
-                      <p className="text-xs text-muted-foreground">₦{item.unit_price.toFixed(2)} each</p>
+                      <p className="text-xs text-muted-foreground">
+                        ₦{item.unit_price.toFixed(2)} each
+                      </p>
                     </div>
                     <Button
                       variant="ghost"
@@ -165,7 +297,7 @@ export function PaymentSidebar({
                       <Trash2 className="w-3 h-3" />
                     </Button>
                   </div>
-                  
+
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <Button
@@ -176,14 +308,16 @@ export function PaymentSidebar({
                       >
                         <Minus className="w-3 h-3" />
                       </Button>
-                      <span className="text-sm font-medium w-8 text-center">{item.quantity}</span>
+                      <span className="text-sm font-medium w-8 text-center">
+                        {item.quantity}
+                      </span>
                       <Button
                         variant="outline"
                         size="sm"
                         onClick={() => onUpdateItem(item.id, item.quantity + 1)}
                         disabled={
-                          item.menu_item.quantity !== null && 
-                          item.menu_item.quantity !== undefined && 
+                          item.menu_item.quantity !== null &&
+                          item.menu_item.quantity !== undefined &&
                           item.quantity >= Math.min(item.menu_item.quantity, 100)
                         }
                         className="h-7 w-7 p-0"
@@ -191,7 +325,9 @@ export function PaymentSidebar({
                         <Plus className="w-3 h-3" />
                       </Button>
                     </div>
-                    <Badge variant="secondary">₦{item.total_price.toFixed(2)}</Badge>
+                    <Badge variant="secondary">
+                      ₦{item.total_price.toFixed(2)}
+                    </Badge>
                   </div>
                 </Card>
               ))}
@@ -201,7 +337,7 @@ export function PaymentSidebar({
 
         <Separator />
 
-        {/* Payment Method Selection */}
+        {/* Payment Method */}
         <div className="space-y-3">
           <Label className="text-sm font-medium">Payment Method</Label>
           <RadioGroup
@@ -211,14 +347,20 @@ export function PaymentSidebar({
           >
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="cash" id="cash" />
-              <Label htmlFor="cash" className="flex items-center gap-2 cursor-pointer">
+              <Label
+                htmlFor="cash"
+                className="flex items-center gap-2 cursor-pointer"
+              >
                 <Banknote className="w-4 h-4" />
                 Cash
               </Label>
             </div>
             <div className="flex items-center space-x-2">
               <RadioGroupItem value="card" id="card" />
-              <Label htmlFor="card" className="flex items-center gap-2 cursor-pointer">
+              <Label
+                htmlFor="card"
+                className="flex items-center gap-2 cursor-pointer"
+              >
                 <CreditCard className="w-4 h-4" />
                 Card/Transfer
               </Label>
@@ -228,7 +370,7 @@ export function PaymentSidebar({
 
         <Separator />
 
-        {/* Total and Process Payment */}
+        {/* Total & Process Payment */}
         <div className="space-y-4">
           <div className="flex justify-between items-center">
             <span className="text-lg font-semibold">Total:</span>
@@ -243,16 +385,97 @@ export function PaymentSidebar({
             className="w-full"
             size="lg"
           >
-            {isSubmitting ? "Processing..." : "Process Payment"}
+            {isSubmitting ? "Processing..." : "Print Receipt"}
           </Button>
 
-          {/* Receipt Generation */}
-          {submittedOrderId && (
-            <div className="mt-4 p-3 bg-green-500/10 border border-green-500/20 rounded-md">
-              <p className="text-sm text-green-400 mb-2">Payment processed successfully!</p>
-              <ReceiptButton orderId={submittedOrderId} variant="outline" />
-            </div>
-          )}
+          {/* Receipt Modal */}
+          <Dialog open={showReceiptModal} onOpenChange={setShowReceiptModal}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle>Receipt Preview</DialogTitle>
+              </DialogHeader>
+
+              {receiptData && (
+                <div className="space-y-4">
+                  {/* Receipt Preview */}
+                  <div className="bg-white text-black font-mono text-xs border rounded p-4">
+                    <div className="text-center border-b-2 border-black pb-2 mb-3">
+                      <div className="font-bold text-sm">Bar POS</div>
+                      <div className="text-xs">26, Mock Street, Nigeria</div>
+                    </div>
+
+                    <div className="mb-3 text-xs">
+                      <div>
+                        <strong>Receipt ID:</strong> {receiptData.receiptId}
+                      </div>
+                      <div>
+                        <strong>Date:</strong> {receiptData.date}
+                      </div>
+                      <div>
+                        <strong>Payment Method:</strong>{" "}
+                        {receiptData.paymentMethod.toUpperCase()}
+                      </div>
+                    </div>
+
+                    <div className="mb-3">
+                      {receiptData.items.map((item: any) => (
+                        <div key={item.id} className="flex justify-between mb-1">
+                          <div className="flex-1 mr-2">
+                            {item.menu_item.name}
+                          </div>
+                          <div className="mr-2">{item.quantity}x</div>
+                          <div className="text-right">
+                            ₦{item.total_price.toFixed(2)}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="border-t border-black pt-2">
+                      <div className="flex justify-between font-bold text-sm">
+                        <span>TOTAL:</span>
+                        <span>₦{receiptData.total.toFixed(2)}</span>
+                      </div>
+                    </div>
+
+                    <div className="text-center mt-4 pt-3 border-t border-black">
+                      <div>Thanks for your patronage. We hope to see you again.</div>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => {
+                        const receiptHTML = generateReceiptHTML(receiptData)
+                        const printWindow = window.open("", "_blank")
+                        if (printWindow) {
+                          printWindow.document.write(receiptHTML)
+                          printWindow.document.close()
+                          printWindow.focus()
+                          printWindow.print()
+                          printWindow.close()
+                        }
+                        setShowReceiptModal(false)
+                      }}
+                      className="flex-1"
+                    >
+                      <Printer className="w-4 h-4 mr-2" />
+                      Print
+                    </Button>
+                    <Button
+                      onClick={() => setShowReceiptModal(false)}
+                      variant="outline"
+                      className="flex-1"
+                    >
+                      <X className="w-4 h-4 mr-2" />
+                      Close
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
         </div>
       </CardContent>
     </div>

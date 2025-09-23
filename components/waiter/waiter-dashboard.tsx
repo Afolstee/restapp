@@ -64,6 +64,7 @@ export function WaiterDashboard() {
   const [searchQuery, setSearchQuery] = useState("")
   const [user, setUser] = useState<any>(null)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [mobileOrderOpen, setMobileOrderOpen] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
 
@@ -72,17 +73,17 @@ export function WaiterDashboard() {
   useEffect(() => {
     fetchMenuItems()
     getCurrentUser()
-    
+
     // Listen for localStorage changes (when admin updates menu)
     const handleStorageChange = () => {
       fetchMenuItems()
     }
-    
+
     window.addEventListener('storage', handleStorageChange)
-    
+
     // Also poll for changes every 2 seconds to catch same-tab updates
     const pollInterval = setInterval(fetchMenuItems, 2000)
-    
+
     return () => {
       window.removeEventListener('storage', handleStorageChange)
       clearInterval(pollInterval)
@@ -122,7 +123,7 @@ export function WaiterDashboard() {
       const currentInOrder = currentOrder.items
         .filter(item => item.menu_item_id === menuItem.id)
         .reduce((sum, item) => sum + item.quantity, 0)
-      
+
       if (currentInOrder + quantity > menuItem.quantity) {
         toast({
           title: "Insufficient Stock",
@@ -199,7 +200,7 @@ export function WaiterDashboard() {
             })
           }
         }
-        
+
         return {
           ...item,
           quantity: clampedQuantity,
@@ -228,10 +229,10 @@ export function WaiterDashboard() {
   const filteredItems = menuItems.filter((item) => {
     const matchesSearch =
       item.name.toLowerCase().includes(searchQuery.toLowerCase())
-    
+
     // Filter by tab
     const matchesTab = activeTab === "bar" ? item.type === "drinks" : item.type === "food"
-    
+
     return matchesSearch && matchesTab
   })
 
@@ -271,7 +272,7 @@ export function WaiterDashboard() {
                     <Clock className="w-4 h-4" />
                     Food Menu
                   </Button>
-                  
+
                   <div className="pt-4 border-t border-border mt-4">
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
@@ -300,7 +301,7 @@ export function WaiterDashboard() {
                 </div>
               </SheetContent>
             </Sheet>
-            
+
             <div className="flex items-center gap-2">
               <Wine className="w-8 h-8 text-primary" />
               <h1 className="text-2xl font-bold">Bar POS</h1>
@@ -337,7 +338,7 @@ export function WaiterDashboard() {
               </AlertDialogContent>
             </AlertDialog>
           </div>
-          
+
           {/* Mobile Theme Toggle */}
           <div className="md:hidden">
             <ThemeToggle />
@@ -354,7 +355,7 @@ export function WaiterDashboard() {
             <div className="hidden md:block">
               <MenuTabs activeTab={activeTab} onTabChange={setActiveTab} />
             </div>
-            
+
             {/* Mobile Page Title */}
             <div className="md:hidden">
               <h2 className="text-lg font-semibold capitalize">{activeTab} Menu</h2>
@@ -389,7 +390,7 @@ export function WaiterDashboard() {
             orderTotal={orderTotal}
           />
         </div>
-        
+
         {/* Mobile Payment Summary - Only visible on mobile */}
         <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 z-10">
           <div className="flex items-center justify-between">
@@ -399,13 +400,31 @@ export function WaiterDashboard() {
               </p>
               <p className="font-semibold">₦{orderTotal.toFixed(2)}</p>
             </div>
-            <Button 
-              size="sm" 
-              disabled={currentOrder.items.length === 0}
-              className="bg-primary hover:bg-primary/90"
-            >
-              View Order
-            </Button>
+            <Sheet open={mobileOrderOpen} onOpenChange={setMobileOrderOpen}>
+              <SheetTrigger asChild>
+                <Button 
+                  size="sm" 
+                  disabled={currentOrder.items.length === 0}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  View Order
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-full sm:w-80">
+                <SheetHeader>
+                  <SheetTitle>Order Summary</SheetTitle>
+                </SheetHeader>
+                <div className="mt-6">
+                  <PaymentSidebar
+                    currentOrder={currentOrder}
+                    onUpdateOrder={setCurrentOrder}
+                    onUpdateItem={updateOrderItem}
+                    onRemoveItem={removeFromOrder}
+                    orderTotal={orderTotal}
+                  />
+                </div>
+              </SheetContent>
+            </Sheet>
           </div>
         </div>
       </div>

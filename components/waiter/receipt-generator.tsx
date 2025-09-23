@@ -8,6 +8,7 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Receipt, Printer, Download, Eye } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { generateReceiptId } from "@/lib/utils/receipt-id-generator"
 
 interface OrderItem {
   id: string
@@ -48,12 +49,13 @@ export function ReceiptGenerator({ order, trigger }: ReceiptGeneratorProps) {
 
   const generateReceiptHTML = () => {
     const receiptDate = new Date(order.created_at).toLocaleString()
+    const receiptId = generateReceiptId(order.id)
 
     return `
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Receipt - Order #${order.id.slice(-8)}</title>
+          <title>Receipt - ${receiptId}</title>
           <style>
             body {
               font-family: 'Courier New', monospace;
@@ -137,20 +139,18 @@ export function ReceiptGenerator({ order, trigger }: ReceiptGeneratorProps) {
         </head>
         <body>
           <div class="header">
-            <div class="restaurant-name">RESTAURANT POS</div>
-            <div class="restaurant-info">123 Main Street</div>
-            <div class="restaurant-info">City, State 12345</div>
-            <div class="restaurant-info">Phone: (555) 123-4567</div>
+            <div class="restaurant-name">Bar POS</div>
+            <div class="restaurant-info">26, Mock Street, Nigeria</div>
           </div>
-          
+
           <div class="order-info">
-            <div><strong>Order #:</strong> ${order.id.slice(-8).toUpperCase()}</div>
+            <div><strong>Receipt ID:</strong> ${receiptId}</div>
             <div><strong>Table:</strong> ${order.table_number}</div>
             ${order.customer_name ? `<div><strong>Customer:</strong> ${order.customer_name}</div>` : ""}
             <div><strong>Server:</strong> ${order.waiter.first_name} ${order.waiter.last_name}</div>
             <div><strong>Date:</strong> ${receiptDate}</div>
           </div>
-          
+
           <div class="items">
             ${order.order_items
               .map(
@@ -164,16 +164,8 @@ export function ReceiptGenerator({ order, trigger }: ReceiptGeneratorProps) {
               )
               .join("")}
           </div>
-          
+
           <div class="totals">
-            <div class="total-line">
-              <span>Subtotal:</span>
-              <span>₦${order.subtotal.toFixed(2)}</span>
-            </div>
-            <div class="total-line">
-              <span>Tax (8.75%):</span>
-              <span>₦${order.tax_amount.toFixed(2)}</span>
-            </div>
             <div class="total-line final-total">
               <span>TOTAL:</span>
               <span>₦${order.total_amount.toFixed(2)}</span>
@@ -189,77 +181,35 @@ export function ReceiptGenerator({ order, trigger }: ReceiptGeneratorProps) {
                 : ""
             }
           </div>
-          
+
           <div class="footer">
-            <div>Thank you for dining with us!</div>
-            <div>Please come again soon</div>
-            <div style="margin-top: 10px;">★★★★★</div>
+            <div>Thanks for patronage. We hope to see you again.</div>
           </div>
         </body>
       </html>
     `
   }
 
-  const handlePrint = async () => {
-    setIsGenerating(true)
-    
-    try {
-      const receiptHTML = generateReceiptHTML()
-      const printWindow = window.open("", "_blank", "width=600,height=800")
-      
-      if (!printWindow) {
-        // Popup blocked, show user-friendly message
-        toast({
-          title: "Popup Blocked",
-          description: "Please allow popups for this site to print receipts. Try again or use download instead.",
-          variant: "destructive",
-        })
-        return
-      }
-
+  const handlePrint = () => {
+    const receiptHTML = generateReceiptHTML()
+    const printWindow = window.open("", "_blank")
+    if (printWindow) {
       printWindow.document.write(receiptHTML)
       printWindow.document.close()
-      
-      // Wait for content to load before printing
-      await new Promise(resolve => {
-        if (printWindow.document.readyState === 'complete') {
-          resolve(void 0)
-        } else {
-          printWindow.addEventListener('load', () => resolve(void 0))
-        }
-      })
-      
       printWindow.focus()
       printWindow.print()
-      
-      // Close window after a short delay to allow print dialog to appear
-      setTimeout(() => {
-        printWindow.close()
-      }, 100)
-      
-      toast({
-        title: "Receipt Sent to Printer",
-        description: "Receipt has been sent to your printer.",
-      })
-    } catch (error) {
-      console.error('Print error:', error)
-      toast({
-        title: "Print Failed",
-        description: "Unable to print receipt. Please try downloading instead.",
-        variant: "destructive",
-      })
-    } finally {
-      setIsGenerating(false)
+      printWindow.close()
     }
   }
 
   const handleDownload = () => {
     const receiptHTML = generateReceiptHTML()
+    const receiptId = generateReceiptId(order.id)
     const blob = new Blob([receiptHTML], { type: "text/html" })
     const url = URL.createObjectURL(blob)
     const a = document.createElement("a")
     a.href = url
-    a.download = `receipt-${order.id.slice(-8)}.html`
+    a.download = `${receiptId}.html`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -286,7 +236,7 @@ export function ReceiptGenerator({ order, trigger }: ReceiptGeneratorProps) {
         {trigger || (
           <Button variant="outline" size="sm">
             <Receipt className="w-4 h-4 mr-2" />
-            Receipt
+            Print Receipt
           </Button>
         )}
       </DialogTrigger>
@@ -300,15 +250,13 @@ export function ReceiptGenerator({ order, trigger }: ReceiptGeneratorProps) {
           <Card className="bg-white text-black font-mono text-xs">
             <CardContent className="p-4 max-w-xs mx-auto">
               <div className="text-center border-b-2 border-black pb-2 mb-3">
-                <div className="font-bold text-sm">RESTAURANT POS</div>
-                <div className="text-xs">123 Main Street</div>
-                <div className="text-xs">City, State 12345</div>
-                <div className="text-xs">Phone: (555) 123-4567</div>
+                <div className="font-bold text-sm">Bar POS</div>
+                <div className="text-xs">26, Mock Street, Nigeria</div>
               </div>
 
               <div className="mb-3 text-xs">
                 <div>
-                  <strong>Order #:</strong> {order.id.slice(-8).toUpperCase()}
+                  <strong>Receipt ID:</strong> {generateReceiptId(order.id)}
                 </div>
                 <div>
                   <strong>Table:</strong> {order.table_number}
@@ -337,15 +285,7 @@ export function ReceiptGenerator({ order, trigger }: ReceiptGeneratorProps) {
               </div>
 
               <div className="border-t border-black pt-2">
-                <div className="flex justify-between mb-1">
-                  <span>Subtotal:</span>
-                  <span>₦{order.subtotal.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between mb-1">
-                  <span>Tax (8.75%):</span>
-                  <span>₦{order.tax_amount.toFixed(2)}</span>
-                </div>
-                <div className="flex justify-between font-bold text-sm border-t border-black pt-1 mt-1">
+                <div className="flex justify-between font-bold text-sm">
                   <span>TOTAL:</span>
                   <span>₦{order.total_amount.toFixed(2)}</span>
                 </div>
@@ -358,22 +298,16 @@ export function ReceiptGenerator({ order, trigger }: ReceiptGeneratorProps) {
               </div>
 
               <div className="text-center mt-4 pt-3 border-t border-black">
-                <div>Thank you for dining with us!</div>
-                <div>Please come again soon</div>
-                <div className="mt-2">★★★★★</div>
+                <div>Thanks for patronage. We hope to see you again.</div>
               </div>
             </CardContent>
           </Card>
 
           {/* Action Buttons */}
           <div className="flex gap-2">
-            <Button 
-              onClick={handlePrint} 
-              disabled={isGenerating}
-              className="flex-1"
-            >
+            <Button onClick={handlePrint} className="flex-1">
               <Printer className="w-4 h-4 mr-2" />
-              {isGenerating ? "Printing..." : "Print"}
+              Print
             </Button>
             <Button onClick={handleDownload} variant="outline" className="flex-1 bg-transparent">
               <Download className="w-4 h-4 mr-2" />
