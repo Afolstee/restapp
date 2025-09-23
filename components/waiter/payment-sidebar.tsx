@@ -136,7 +136,7 @@ export function PaymentSidebar({
   }
 
   return (
-    <div className="w-80 border-l border-border bg-card/30 backdrop-blur-sm flex flex-col h-full">
+    <div className="w-full lg:w-80 border-l border-border bg-card/30 backdrop-blur-sm flex flex-col h-full lg:h-auto">
       <CardHeader className="pb-4">
         <CardTitle className="text-lg">Order Summary</CardTitle>
       </CardHeader>

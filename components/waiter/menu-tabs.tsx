@@ -10,22 +10,26 @@ interface MenuTabsProps {
 
 export function MenuTabs({ activeTab, onTabChange }: MenuTabsProps) {
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2 w-full sm:w-auto">
       <Button
         variant={activeTab === "bar" ? "default" : "ghost"}
         onClick={() => onTabChange("bar")}
-        className="gap-2"
+        className="gap-2 flex-1 sm:flex-none text-xs sm:text-sm"
+        size="sm"
       >
         <Wine className="w-4 h-4" />
-        Bar Menu
+        <span className="hidden xs:inline">Bar Menu</span>
+        <span className="xs:hidden">Bar</span>
       </Button>
       <Button
         variant={activeTab === "food" ? "default" : "ghost"}
         onClick={() => onTabChange("food")}
-        className="gap-2"
+        className="gap-2 flex-1 sm:flex-none text-xs sm:text-sm"
+        size="sm"
       >
         <Utensils className="w-4 h-4" />
-        Food Menu
+        <span className="hidden xs:inline">Food Menu</span>
+        <span className="xs:hidden">Food</span>
       </Button>
     </div>
   )

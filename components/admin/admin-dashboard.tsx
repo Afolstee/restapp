@@ -34,7 +34,15 @@ import {
   Clock,
   TrendingUp,
   ShoppingBag,
+  Menu,
 } from "lucide-react"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 
 interface DashboardStats {
   totalOrders: number
@@ -47,6 +55,7 @@ interface DashboardStats {
 
 export function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview")
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [stats, setStats] = useState<DashboardStats>({
     totalOrders: 0,
     totalRevenue: 0,
@@ -125,6 +134,88 @@ export function AdminDashboard() {
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-4">
+            {/* Mobile Menu Button */}
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="sm" className="md:hidden">
+                  <Menu className="w-5 h-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-80">
+                <SheetHeader>
+                  <SheetTitle>Admin Menu</SheetTitle>
+                </SheetHeader>
+                <div className="mt-6 space-y-1">
+                  <Button
+                    variant={activeTab === "overview" ? "default" : "ghost"}
+                    onClick={() => { setActiveTab("overview"); setMobileMenuOpen(false) }}
+                    className="w-full justify-start gap-2"
+                  >
+                    <BarChart3 className="w-4 h-4" />
+                    Overview
+                  </Button>
+                  <Button
+                    variant={activeTab === "orders" ? "default" : "ghost"}
+                    onClick={() => { setActiveTab("orders"); setMobileMenuOpen(false) }}
+                    className="w-full justify-start gap-2"
+                  >
+                    <ClipboardList className="w-4 h-4" />
+                    Orders
+                  </Button>
+                  <Button
+                    variant={activeTab === "menu" ? "default" : "ghost"}
+                    onClick={() => { setActiveTab("menu"); setMobileMenuOpen(false) }}
+                    className="w-full justify-start gap-2"
+                  >
+                    <Book className="w-4 h-4" />
+                    Menu
+                  </Button>
+                  <Button
+                    variant={activeTab === "staff" ? "default" : "ghost"}
+                    onClick={() => { setActiveTab("staff"); setMobileMenuOpen(false) }}
+                    className="w-full justify-start gap-2"
+                  >
+                    <Users className="w-4 h-4" />
+                    Staff
+                  </Button>
+                  <Button
+                    variant={activeTab === "finance" ? "default" : "ghost"}
+                    onClick={() => { setActiveTab("finance"); setMobileMenuOpen(false) }}
+                    className="w-full justify-start gap-2"
+                  >
+                    <TrendingUp className="w-4 h-4" />
+                    Finance
+                  </Button>
+                  
+                  <div className="pt-4 border-t border-border mt-4">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start gap-2 text-destructive hover:text-destructive"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Sign Out
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Confirm Sign Out</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to sign out? You will be redirected to the login page.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleSignOut}>Sign Out</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+            
             <div className="flex items-center gap-2">
               <Wine className="w-8 h-8 text-primary" />
               <h1 className="text-2xl font-bold">Bar</h1>
@@ -134,7 +225,7 @@ export function AdminDashboard() {
             </Badge>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-4">
             <ThemeToggle />
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -161,33 +252,46 @@ export function AdminDashboard() {
               </AlertDialogContent>
             </AlertDialog>
           </div>
+          
+          {/* Mobile Theme Toggle */}
+          <div className="md:hidden">
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 
       <div className="p-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="grid w-full grid-cols-6 bg-card/50 backdrop-blur-sm">
-            <TabsTrigger value="overview" className="flex items-center gap-2">
-              <BarChart3 className="w-4 h-4" />
-              Overview
-            </TabsTrigger>
-            <TabsTrigger value="orders" className="flex items-center gap-2">
-              <ClipboardList className="w-4 h-4" />
-              Orders
-            </TabsTrigger>
-            <TabsTrigger value="menu" className="flex items-center gap-2">
-              <Book className="w-4 h-4" />
-              Menu
-            </TabsTrigger>
-            <TabsTrigger value="staff" className="flex items-center gap-2">
-              <Users className="w-4 h-4" />
-              Staff
-            </TabsTrigger>
-            <TabsTrigger value="finance" className="flex items-center gap-2">
-              <TrendingUp className="w-4 h-4" />
-              Finance
-            </TabsTrigger>
-          </TabsList>
+          {/* Desktop Tabs - Hidden on Mobile */}
+          <div className="hidden md:block">
+            <TabsList className="grid w-full grid-cols-5 bg-card/50 backdrop-blur-sm">
+              <TabsTrigger value="overview" className="flex items-center gap-2">
+                <BarChart3 className="w-4 h-4" />
+                Overview
+              </TabsTrigger>
+              <TabsTrigger value="orders" className="flex items-center gap-2">
+                <ClipboardList className="w-4 h-4" />
+                Orders
+              </TabsTrigger>
+              <TabsTrigger value="menu" className="flex items-center gap-2">
+                <Book className="w-4 h-4" />
+                Menu
+              </TabsTrigger>
+              <TabsTrigger value="staff" className="flex items-center gap-2">
+                <Users className="w-4 h-4" />
+                Staff
+              </TabsTrigger>
+              <TabsTrigger value="finance" className="flex items-center gap-2">
+                <TrendingUp className="w-4 h-4" />
+                Finance
+              </TabsTrigger>
+            </TabsList>
+          </div>
+          
+          {/* Mobile Page Title */}
+          <div className="md:hidden mb-6">
+            <h2 className="text-xl font-semibold capitalize">{activeTab}</h2>
+          </div>
 
           <TabsContent value="overview" className="space-y-6">
             {/* Stats Cards */}

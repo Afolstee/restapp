@@ -22,7 +22,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { Clock, User, LogOut, Search, Plus, Wine } from "lucide-react"
+import { Clock, User, LogOut, Search, Plus, Wine, Menu } from "lucide-react"
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet"
 
 interface MenuItem {
   id: string
@@ -56,6 +63,7 @@ export function WaiterDashboard() {
   const [activeTab, setActiveTab] = useState<"bar" | "food">("bar")
   const [searchQuery, setSearchQuery] = useState("")
   const [user, setUser] = useState<any>(null)
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const router = useRouter()
   const { toast } = useToast()
 
@@ -235,6 +243,64 @@ export function WaiterDashboard() {
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center gap-4">
+            {/* Mobile Menu Button */}
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="sm" className="md:hidden">
+                  <Menu className="w-5 h-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-80">
+                <SheetHeader>
+                  <SheetTitle>Waiter Menu</SheetTitle>
+                </SheetHeader>
+                <div className="mt-6 space-y-1">
+                  <Button
+                    variant={activeTab === "bar" ? "default" : "ghost"}
+                    onClick={() => { setActiveTab("bar"); setMobileMenuOpen(false) }}
+                    className="w-full justify-start gap-2"
+                  >
+                    <Wine className="w-4 h-4" />
+                    Bar Menu
+                  </Button>
+                  <Button
+                    variant={activeTab === "food" ? "default" : "ghost"}
+                    onClick={() => { setActiveTab("food"); setMobileMenuOpen(false) }}
+                    className="w-full justify-start gap-2"
+                  >
+                    <Clock className="w-4 h-4" />
+                    Food Menu
+                  </Button>
+                  
+                  <div className="pt-4 border-t border-border mt-4">
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className="w-full justify-start gap-2 text-destructive hover:text-destructive"
+                        >
+                          <LogOut className="w-4 h-4" />
+                          Sign Out
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Confirm Sign Out</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to sign out? You will be redirected to the login page.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={handleSignOut}>Sign Out</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                </div>
+              </SheetContent>
+            </Sheet>
+            
             <div className="flex items-center gap-2">
               <Wine className="w-8 h-8 text-primary" />
               <h1 className="text-2xl font-bold">Bar POS</h1>
@@ -244,7 +310,7 @@ export function WaiterDashboard() {
             </Badge>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-4">
             <ThemeToggle />
             <AlertDialog>
               <AlertDialogTrigger asChild>
@@ -271,43 +337,77 @@ export function WaiterDashboard() {
               </AlertDialogContent>
             </AlertDialog>
           </div>
+          
+          {/* Mobile Theme Toggle */}
+          <div className="md:hidden">
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 
-      <div className="flex h-[calc(100vh-73px)]">
+      <div className="flex flex-col lg:flex-row h-[calc(100vh-73px)]">
         {/* Main Content */}
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col min-w-0">
           {/* Navigation */}
-          <div className="flex items-center justify-between p-4 border-b border-border">
-            <MenuTabs activeTab={activeTab} onTabChange={setActiveTab} />
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 border-b border-border gap-4">
+            {/* Desktop Tabs - Hidden on Mobile */}
+            <div className="hidden md:block">
+              <MenuTabs activeTab={activeTab} onTabChange={setActiveTab} />
+            </div>
+            
+            {/* Mobile Page Title */}
+            <div className="md:hidden">
+              <h2 className="text-lg font-semibold capitalize">{activeTab} Menu</h2>
+            </div>
 
             <div className="flex items-center gap-4">
-              <div className="relative">
+              <div className="relative flex-1 sm:flex-none">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
                 <Input
                   placeholder="Search menu items..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 w-64"
+                  className="pl-10 w-full sm:w-64"
                 />
               </div>
             </div>
           </div>
 
           {/* Content Area */}
-          <div className="flex-1 p-4">
+          <div className="flex-1 p-4 pb-20 lg:pb-4">
             <ProductGrid items={filteredItems} activeTab={activeTab} onAddToOrder={addToOrder} />
           </div>
         </div>
 
-        {/* Payment Sidebar */}
-        <PaymentSidebar
-          currentOrder={currentOrder}
-          onUpdateOrder={setCurrentOrder}
-          onUpdateItem={updateOrderItem}
-          onRemoveItem={removeFromOrder}
-          orderTotal={orderTotal}
-        />
+        {/* Payment Sidebar - Hidden on mobile, visible on large screens */}
+        <div className="hidden lg:block">
+          <PaymentSidebar
+            currentOrder={currentOrder}
+            onUpdateOrder={setCurrentOrder}
+            onUpdateItem={updateOrderItem}
+            onRemoveItem={removeFromOrder}
+            orderTotal={orderTotal}
+          />
+        </div>
+        
+        {/* Mobile Payment Summary - Only visible on mobile */}
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-card border-t border-border p-4 z-10">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-muted-foreground">
+                {currentOrder.items.length} item{currentOrder.items.length !== 1 ? 's' : ''}
+              </p>
+              <p className="font-semibold">₦{orderTotal.toFixed(2)}</p>
+            </div>
+            <Button 
+              size="sm" 
+              disabled={currentOrder.items.length === 0}
+              className="bg-primary hover:bg-primary/90"
+            >
+              View Order
+            </Button>
+          </div>
+        </div>
       </div>
     </div>
   )
